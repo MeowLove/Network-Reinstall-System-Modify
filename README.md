@@ -48,7 +48,7 @@ A：You can join my Telegram channel and discussion groups for instant communica
 ## End Notes
 [Network-Reinstall-System-Modify](https://tech.cxthhhhh.com/linux/2018/11/27/original-one-click-network-reinstall-system-magic-modify-version-for-linux-windows-en.html)
 
-Version：V2.0.3 
+Version：V2.0.3  
 Date：2019/01/06
 
 [Technical Blog | 技術博客](https://tech.cxthhhhh.com/)  
