@@ -40,7 +40,7 @@ A：It's hard to describe the process in one sentence, so visit my blog and foll
 A：As we all know, Github can only upload files smaller than 100MB. However, as of January 1, 2019, all files in the entire Network-Reinstall-System-Modify project totaled more than 50GB. So I can only upload script content and smaller files, including various image files and the auxiliary platform I built will not be able to upload. But you can visit [Open Disk CDN](https://opendisk.cxthhhhh.com/) to learn more.
 
 5. Q：How to communicate? Feedback question?[Support language English (Recommended), Chinese (中文).]  
-A：You can join my Telegram channel and discussion groups for instant communication and feedback. You can also submit an issue with Issues, but this is not immediate, but it is easy to track.  
+A：You can join my Telegram channel and discussion groups for instant communication and feedback. You can also submit an Issues, but this is not immediate, but it is easy to track.  
 [Telegram Channel：My Share](https://t.me/me_share)  
 [Telegram Chat Group：Technical Blog | 技術博客](https://t.me/Technical_Blog)
 
@@ -48,7 +48,7 @@ A：You can join my Telegram channel and discussion groups for instant communica
 ## End Notes
 [Network-Reinstall-System-Modify](https://tech.cxthhhhh.com/linux/2018/11/27/original-one-click-network-reinstall-system-magic-modify-version-for-linux-windows-en.html)
 
-Version：V2.0.1 
+Version：V2.0.3 
 Date：2019/01/06
 
 [Technical Blog | 技術博客](https://tech.cxthhhhh.com/)  
