@@ -9,7 +9,7 @@
 
 ## Magic Modify version author:
 ## Default root password: cxthhhhh.com
-## Blog: https://cxthhhhh.com
+## WebSite: https://www.cxthhhhh.com
 ## Written By CXT (CXTHHHHH.com)
 
 ## Original version author:
@@ -215,8 +215,8 @@ clear && echo -e "\n\033[36m# Check Dependence\033[0m\n"
 
 if [[ "$ddMode" == '1' ]]; then
   CheckDependence iconv;
-  linux_relese='ubuntu';
-  tmpDIST='bionic';
+  linux_relese='debian';
+  tmpDIST='stretch';
   tmpVER='amd64';
   tmpINS='auto';
 fi
@@ -331,7 +331,7 @@ if [[ "$SpikCheckDIST" == '0' ]]; then
 fi
 
 [[ "$ddMode" == '1' ]] && {
-  export SSL_SUPPORT='https://cxthhhhh.com/tech-tools/Network-Reinstall-System-Modify/wget_udeb_amd64.tar.gz';
+  export SSL_SUPPORT='https://www.cxthhhhh.com/tech-tools/Network-Reinstall-System-Modify/CoreFiles/wget_udeb_amd64.tar.gz';
   if [[ -n "$tmpURL" ]]; then
     DDURL="$tmpURL"
     echo "$DDURL" |grep -q '^http://\|^ftp://\|^https://';
@@ -389,7 +389,6 @@ if [[ "$linux_relese" == 'centos' ]]; then
     awk 'BEGIN{print '${UNVER}'-'${DIST}'}' |grep -q '^-'
     if [ $? != '0' ]; then
       UNKNOWHW='1';
-      echo -en "\033[33mThe version lower then \033[31m$UNVER\033[33m may not support in auto mode! \033[0m\n";
       if [[ "$inVNC" == 'n' ]]; then
         echo -en "\033[35mYou can connect VNC with \033[32mPublic IP\033[35m and port \033[32m1\033[35m/\033[32m5901\033[35m in vnc viewer.\033[0m\n"
         read -n 1 -p "Press Enter to continue..." INP
