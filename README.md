@@ -1,7 +1,7 @@
 # Network-Reinstall-System-Modify
 It can reinstall CentOS, Debian, Ubuntu, Windows 2003, 7, 2008R2, 2012R2, 2016, 2019 and other systems (continuously added) via the Internet, and can install any system via mounting remote network ISO.
 
-[One-click Network Reinstall System – Magic Modify version](https://tech.cxthhhhh.com/linux/2018/11/27/original-one-click-network-reinstall-system-magic-modify-version-for-linux-windows-en.html), Forked from [MoeClub Vicer](https://moeclub.org/2018/04/03/603/), technical support and maintenance provided by [Technical Blog | 技術博客](https://tech.cxthhhhh.com/), more features of the magic version are constantly increasing.
+[One-click Network Reinstall System – Magic Modify version](https://www.cxthhhhh.com/), Forked from [MoeClub Vicer](https://moeclub.org/), technical support and maintenance provided by [Technical Blog | 技術博客 | CXT - Enjoy Life | 生活、技术、交友、分享 - 自天佑之，吉无不利](https://www.cxthhhhh.com/), more features of the magic version are constantly increasing.
 
 
 ## Realistic Demand
@@ -18,10 +18,10 @@ Why do we need to reinstall a pure system?
 Where are the release notes and tutorials?
 
 1. If you are from an English community, please click here.  
-https://tech.cxthhhhh.com/linux/2018/11/27/original-one-click-network-reinstall-system-magic-modify-version-for-linux-windows-en.html
+https://tech.cxthhhhh.com/  
 
 2. 如果你来自于中文社区，请点击这里。  
-https://tech.cxthhhhh.com/linux/2018/11/29/original-one-click-network-reinstall-system-magic-modify-version-for-linux-windows-cn.html
+https://tech.cxthhhhh.com/  
 
 
 ## Common Problem
@@ -37,7 +37,7 @@ A：Due to different hardware configuration and network environment, the install
 A：It's hard to describe the process in one sentence, so visit my blog and follow the tutorial.
 
 4. Q：Why isn't the content of the project stored on Github not all?  
-A：As we all know, Github can only upload files smaller than 100MB. However, as of January 1, 2019, all files in the entire Network-Reinstall-System-Modify project totaled more than 50GB. So I can only upload script content and smaller files, including various image files and the auxiliary platform I built will not be able to upload. But you can visit [Open Disk CDN](https://opendisk.cxthhhhh.com/) to learn more.
+A：As we all know, Github can only upload files smaller than 100MB. However, as of January 1, 2019, all files in the entire Network-Reinstall-System-Modify project totaled more than 50GB. So I can only upload script content and smaller files, including various image files and the auxiliary platform I built will not be able to upload. But you can visit [Open Disk CDN](https://odc.cxthhhhh.com/) to learn more.
 
 5. Q：How to communicate? Feedback question?[Support language English (Recommended), Chinese (中文).]  
 A：You can join my Telegram channel and discussion groups for instant communication and feedback. You can also submit an Issues, but this is not immediate, but it is easy to track.  
@@ -46,10 +46,10 @@ A：You can join my Telegram channel and discussion groups for instant communica
 
 
 ## End Notes
-[Network-Reinstall-System-Modify](https://tech.cxthhhhh.com/linux/2018/11/27/original-one-click-network-reinstall-system-magic-modify-version-for-linux-windows-en.html)
+[Network-Reinstall-System-Modify](https://www.cxthhhhh.com/)
 
-Version：V2.0.3  
-Date：2019/01/06
+Version：V3.0.1  
+Date：2020/09/10
 
-[Technical Blog | 技術博客](https://tech.cxthhhhh.com/)  
-https://tech.cxthhhhh.com/
+[CXT - Enjoy Life | 生活、技术、交友、分享 - 自天佑之，吉无不利](https://www.cxthhhhh.com/)  
+https://www.cxthhhhh.com/

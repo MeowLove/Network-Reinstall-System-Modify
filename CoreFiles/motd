@@ -1,0 +1,12 @@
+
+-------------------------------------------------------------------------
+-       Welcome back ! The server connection is successful !            -
+-------------------------------------------------------------------------
+-                       HostName:       CentOS 8                        -
+-                       IP address:     127.0.0.1                       -
+-       You need to modify this login warning ! vim /etc/motd           -
+-------------------------------------------------------------------------
+-       Enable Cockpit [sudo systemctl enable --now cockpit.socket]     -
+-                       RedHat Cockpit  https://ip:9090                 -
+-------------------------------------------------------------------------
+
