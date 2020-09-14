@@ -18,10 +18,10 @@ Why do we need to reinstall a pure system?
 Where are the release notes and tutorials?
 
 1. If you are from an English community, please click here.  
-https://tech.cxthhhhh.com/  
+https://www.cxthhhhh.com/  
 
 2. 如果你来自于中文社区，请点击这里。  
-https://tech.cxthhhhh.com/  
+https://www.cxthhhhh.com/  
 
 
 ## Common Problem
