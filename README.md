@@ -1,7 +1,7 @@
 # Network-Reinstall-System-Modify
 It can reinstall CentOS, Debian, Ubuntu, Windows 2003, 7, 2008R2, 2012R2, 2016, 2019 and other systems (continuously added) via the Internet, and can install any system via mounting remote network ISO.
 
-[One-click Network Reinstall System – Magic Modify version](https://www.cxthhhhh.com/), Forked from [MoeClub Vicer](https://moeclub.org/), technical support and maintenance provided by [Technical Blog | 技術博客 | CXT - Enjoy Life | 生活、技术、交友、分享 - 自天佑之，吉无不利](https://www.cxthhhhh.com/), more features of the magic version are constantly increasing.
+[One-click Network Reinstall System – Magic Modify version](https://www.cxthhhhh.com/network-reinstall-system-modify), Forked from [MoeClub Vicer](https://moeclub.org/), technical support and maintenance provided by [Technical Blog | 技術博客 | CXT - Enjoy Life | 生活、技术、交友、分享 - 自天佑之，吉无不利](https://www.cxthhhhh.com/), more features of the magic version are constantly increasing.
 
 
 ## Realistic Demand
@@ -18,10 +18,10 @@ Why do we need to reinstall a pure system?
 Where are the release notes and tutorials?
 
 1. If you are from an English community, please click here.  
-https://www.cxthhhhh.com/  
+https://www.cxthhhhh.com/network-reinstall-system-modify  
 
 2. 如果你来自于中文社区，请点击这里。  
-https://www.cxthhhhh.com/  
+https://www.cxthhhhh.com/network-reinstall-system-modify  
 
 
 ## Common Problem
@@ -48,8 +48,8 @@ A：You can join my Telegram channel and discussion groups for instant communica
 ## End Notes
 [Network-Reinstall-System-Modify](https://www.cxthhhhh.com/)
 
-Version：V3.0.1  
-Date：2020/09/10
+Version：V3.1.0  
+Date：2020/09/15
 
 [CXT - Enjoy Life | 生活、技术、交友、分享 - 自天佑之，吉无不利](https://www.cxthhhhh.com/)  
 https://www.cxthhhhh.com/

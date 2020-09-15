@@ -21,7 +21,7 @@ echo -e "\n\n\n"
 clear
 echo -e "\n"
 echo "---------------------------------------------------------------------------------------------------------------------"
-echo -e "\033[33m Network-Reinstall-System-Modify Tools V3.0.1 2020/09/10 \033[0m"
+echo -e "\033[33m Network-Reinstall-System-Modify Tools V3.1.0 2020/09/15 \033[0m"
 echo -e "\033[33m [Magic Modify] Reinstall the system (any Windows / Linux) requires only network and one click \033[0m"
 echo -e "\033[33m System requirements: Any Linux system with GRUB or GRUB2, recommended CentOS8/Debian10/Ubuntu20 \033[0m"
 echo -e "\n"
@@ -31,7 +31,41 @@ echo "--------------------------------------------------------------------------
 echo " Default password: cxthhhhh.com"
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo -e "\n"
-sleep 8s
+sleep 6s
+
+echo "---------------------------------------------------------------------------------------------------------------------"
+echo " Pre-environment preparation. . ."
+echo "---------------------------------------------------------------------------------------------------------------------"
+echo -e "\n"
+sleep 2s
+
+if [ -f "/usr/bin/apt-get" ];then
+	isDebian=`cat /etc/issue|grep Debian`
+	if [ "$isDebian" != "" ];then
+		echo 'Current system is Debian'
+		apt-get install -y xz-utils openssl gawk file wget curl
+		apt install -y xz-utils openssl gawk file wget curl
+		sleep 3s
+	else
+		echo 'Current system is Ubuntu'
+		apt-get install -y xz-utils openssl gawk file wget curl
+		apt install -y xz-utils openssl gawk file wget curl
+		sleep 3s
+	fi
+else
+    echo 'Current system is CentOS'
+    yum install -y xz openssl gawk file wget curl
+    sleep 3s
+fi
+
+echo "---------------------------------------------------------------------------------------------------------------------"
+echo " Pre-environment preparation. . .  【OK】"
+echo -e "\n"
+echo " Start system installation. . . "
+echo "---------------------------------------------------------------------------------------------------------------------"
+echo -e "\n"
+sleep 2s
+
 
 if [ $1 = '-UI_Options' ]
 then
