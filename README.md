@@ -40,7 +40,14 @@
 </div>
 <br>
 
-
+<div align="center">
+  <h3 align="center">
+  <hr>
+    预览图仅供参考，非最新，一切以成品为准，欢迎大家加入，一起构建更好的系统<br><br>
+  </h3>
+  <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/Network-Reinstall-System-Modify_LOGO1.png">
+  <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/Preview2021.png">
+</div>
 
 # Network-Reinstall-System-Modify
 It can reinstall CentOS, Debian, Ubuntu, Windows 2003, 7, 2008R2, 2012R2, 2016, 2019 and other systems (continuously added) via the Internet, and can install any system via mounting remote network ISO.
@@ -92,7 +99,7 @@ A：You can join my Telegram channel and discussion groups for instant communica
 ## End Notes
 [Network-Reinstall-System-Modify](https://www.cxthhhhh.com/)
 
-Version：V4.0.1  
+Version：V4.0.2  
 Date：2021/04/16
 
 [CXT - Enjoy Life | 生活、技术、交友、分享 - 自天佑之，吉无不利](https://www.cxthhhhh.com/)  
