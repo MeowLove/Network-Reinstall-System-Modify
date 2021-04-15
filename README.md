@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://www.cxthhhhh.com/network-reinstall-system-modify">
-      <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/CXT_Logo.png"  >
+      <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/Network-Reinstall-System-Modify_LOGO1.png"  >
   </a>
   <h1 align="center">
     一键网络重装系统 - 魔改版 <br>（Network-Reinstall-System-Modify）
@@ -41,11 +41,11 @@
 <br>
 
 <div align="center">
+  <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/CXT_Logo.png">
   <h3 align="center">
   <hr>
-    预览图仅供参考，非最新，一切以成品为准，欢迎大家加入，一起构建更好的系统<br><br>
+    预览图仅供参考，非最新，一切以实际为准，欢迎大家加入，一起维护【一键网络重装系统】项目，构建更好的系统。<br><br>
   </h3>
-  <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/Network-Reinstall-System-Modify_LOGO1.png">
   <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/Preview2021.png">
 </div>
 
