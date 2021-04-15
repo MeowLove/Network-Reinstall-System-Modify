@@ -21,8 +21,8 @@ echo -e "\n\n\n"
 clear
 echo -e "\n"
 echo "---------------------------------------------------------------------------------------------------------------------"
-echo -e "\033[33m 一键网络重装系统 - 魔改版 版本：V3.2.0 更新：2021年04月15日 \033[0m"
-echo -e "\033[33m Network-Reinstall-System-Modify Tools V3.2.0 2021/04/15 \033[0m"
+echo -e "\033[33m 一键网络重装系统 - 魔改版 版本：V4.0.1 更新：2021年04月16日 \033[0m"
+echo -e "\033[33m Network-Reinstall-System-Modify Tools V4.0.1 2021/04/16 \033[0m"
 echo "---------------------------------------------------------------------------------------------------------------------"
 echo -e "\033[33m 一键网络重装系统 - 魔改版（适用于Linux / Windows） \033[0m"
 echo -e "\033[33m 系统需求: 任何带有GRUB或GRUB2的Linux操作系统即可运行, 当前推荐安装的系统为： CentOS8/Debian10/Ubuntu20 \033[0m"
@@ -94,7 +94,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest CXT_Bare-metal_System_Deployment_Platform \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Bare-metal_System_Deployment_Platform/CXT_Bare-metal_System_Deployment_Platform_v3.6.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Bare-metal_System_Deployment_Platform/CXT_Bare-metal_System_Deployment_Platform_v3.6.vhd.gz'
 fi
 
 if [ $1 = '-OpenWRT' ]
@@ -103,7 +103,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest OpenWRT \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/OpenWRT-Virtualization-Servers/Stable/openwrt-x86-64-generic-squashfs-combined.img.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/OpenWRT-Virtualization-Servers/Stable/openwrt-x86-64-generic-squashfs-combined.img.gz'
 fi
 
 if [ $1 = '-OpenWRT_UEFI' ]
@@ -112,7 +112,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest OpenWRT_UEFI \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/OpenWRT-Virtualization-Servers/Stable/openwrt-x86-64-generic-squashfs-combined-efi.img.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/OpenWRT-Virtualization-Servers/Stable/openwrt-x86-64-generic-squashfs-combined-efi.img.gz'
 fi
 
 if [ $1 = '-CentOS_8' ]
@@ -121,7 +121,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest CentOS_8 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/CentOS/CentOS_8.X_NetInstallation_Stable_v3.6.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/CentOS/CentOS_8.X_NetInstallation_Stable_v3.6.vhd.gz'
 fi
 
 if [ $1 = '-CentOS_7' ]
@@ -130,7 +130,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest CentOS_7 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/CentOS/CentOS_7.X_NetInstallation_Final_v9.2.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/CentOS/CentOS_7.X_NetInstallation_Final_v9.2.vhd.gz'
 fi
 
 if [ $1 = '-Debian_10' ]
@@ -139,7 +139,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Debian_10 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -d 10 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -d 10 -v 64 -a
 fi
 
 if [ $1 = '-Debian_9' ]
@@ -148,7 +148,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Debian_9 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -d 9 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -d 9 -v 64 -a
 fi
 
 if [ $1 = '-Ubuntu_20.04' ]
@@ -157,7 +157,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Ubuntu_20.04 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -u 20.04 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -u 20.04 -v 64 -a
 fi
 
 if [ $1 = '-Ubuntu_18.04' ]
@@ -166,7 +166,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Ubuntu_18.04 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -u 18.04 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -u 18.04 -v 64 -a
 fi
 
 if [ $1 = '-Windows_Server_2019' ]
@@ -175,7 +175,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Windows_Server_2019 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2019_DataCenter_CN_v5.1.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2019_DataCenter_CN_v5.1.vhd.gz'
 fi
 
 if [ $1 = '-Windows_Server_2019_UEFI' ]
@@ -184,7 +184,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Windows_Server_2019_UEFI \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2019_DataCenter_CN_v5.1_UEFI.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2019_DataCenter_CN_v5.1_UEFI.vhd.gz'
 fi
 
 if [ $1 = '-Windows_Server_2016' ]
@@ -193,7 +193,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Windows_Server_2016 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2016_DataCenter_CN_v4.12.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2016_DataCenter_CN_v4.12.vhd.gz'
 fi
 
 if [ $1 = '-Windows_Server_2012R2' ]
@@ -202,7 +202,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Windows_Server_2012R2 \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2012R2_DataCenter_CN_v4.29.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2012R2_DataCenter_CN_v4.29.vhd.gz'
 fi
 
 if [ $1 = '-Windows_Server_2012R2_UEFI' ]
@@ -211,7 +211,7 @@ then
 	echo -e "\033[33m You have chosen to install the latest Windows_Server_2012R2_UEFI \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2012R2_DataCenter_CN_v4.29_UEFI.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2012R2_DataCenter_CN_v4.29_UEFI.vhd.gz'
 fi
 
 if [ $1 = '-DD' ]
@@ -220,7 +220,7 @@ then
 	echo -e "\033[33m You have chosen to install the DD package provided by you \033[0m"
 	echo -e "\n"
 	sleep 5s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd $2
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd $2
 fi
 
 
@@ -236,7 +236,7 @@ then
 	echo -e "\033[41;30m !!! Warn：Installing the old system will lead to security risks !!! \033[0m"
 	echo -e "\n"
 	sleep 10s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -c 6.10 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -c 6.10 -v 64 -a
 fi
 
 if [ $1 = '-Debian_8' ]
@@ -248,7 +248,7 @@ then
 	echo -e "\033[41;30m !!! Warn：Installing the old system will lead to security risks !!! \033[0m"
 	echo -e "\n"
 	sleep 10s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -d 8 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -d 8 -v 64 -a
 fi
 
 if [ $1 = '-Debian_7' ]
@@ -260,7 +260,7 @@ then
 	echo -e "\033[41;30m !!! Warn：Installing the old system will lead to security risks !!! \033[0m"
 	echo -e "\n"
 	sleep 10s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -d 7 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -d 7 -v 64 -a
 fi
 
 if [ $1 = '-Ubuntu_16.04' ]
@@ -272,7 +272,7 @@ then
 	echo -e "\033[41;30m !!! Warn：Installing the old system will lead to security risks !!! \033[0m"
 	echo -e "\n"
 	sleep 10s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -u 16.04 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -u 16.04 -v 64 -a
 fi
 
 if [ $1 = '-Ubuntu_14.04' ]
@@ -284,7 +284,7 @@ then
 	echo -e "\033[41;30m !!! Warn：Installing the old system will lead to security risks !!! \033[0m"
 	echo -e "\n"
 	sleep 10s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -u 14.04 -v 64 -a
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -u 14.04 -v 64 -a
 fi
 
 if [ $1 = '-Windows_10_Lite' ]
@@ -296,7 +296,7 @@ then
 	echo -e "\033[41;30m !!! Warn：Installing the old system will lead to security risks !!! \033[0m"
 	echo -e "\n"
 	sleep 10s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Historical_File_Windows_DD_Disk/Disk_Windows_10_x64_Lite_by_CXT_v1.0.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Historical_File_Windows_DD_Disk/Disk_Windows_10_x64_Lite_by_CXT_v1.0.vhd.gz'
 fi
 
 if [ $1 = '-Windows_Server_2008R2' ]
@@ -308,7 +308,7 @@ then
 	echo -e "\033[41;30m !!! Warn：Installing the old system will lead to security risks !!! \033[0m"
 	echo -e "\n"
 	sleep 10s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2008R2_DataCenter_CN_v3.27.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2008R2_DataCenter_CN_v3.27.vhd.gz'
 fi
 
 if [ $1 = '-Windows_Server_2003R2' ]
@@ -320,7 +320,7 @@ then
 	echo -e "\033[41;30m !!! Warn：Installing the old system will lead to security risks !!! \033[0m"
 	echo -e "\n"
 	sleep 10s
-	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_2020.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2003_DataCenter_CN_v7.1.vhd.gz'
+	wget --no-check-certificate -qO Core_Install.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v3.1.sh' && bash Core_Install.sh -dd 'https://odc.cxthhhhh.com/SyStem/Windows_DD_Disks/Disk_Windows_Server_2003_DataCenter_CN_v7.1.vhd.gz'
 fi
 
 

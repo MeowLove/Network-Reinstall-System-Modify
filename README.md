@@ -1,3 +1,47 @@
+<div align="center">
+  <a href="https://www.cxthhhhh.com/network-reinstall-system-modify">
+      <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/CXT_Logo.png"  >
+  </a>
+  <h1 align="center">
+    一键网络重装系统 - 魔改版 <br>（Network-Reinstall-System-Modify）
+  </h1>
+  <h3 align="center">
+    通过互联网重新安装Linux和Windows以及常用操作系统。<br> （Reinstall Linux and Windows and Common Operating Systems through the Internet.） <br><br>
+  </h3>
+
+  <a href="/LICENSE">
+    <img src="https://img.shields.io/badge/license-GPL_3.0-brightgreen.svg" alt="">
+  </a>
+
+  <a href="https://github.com/MeowLove/Network-Reinstall-System-Modify/pulls">
+    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="">
+  </a>
+  
+  <a href="https://github.com/MeowLove/Network-Reinstall-System-Modify/issues/new">
+    <img src="https://img.shields.io/badge/Issues-welcome-brightgreen.svg">
+  </a>
+  
+  <a href="https://github.com/MeowLove/Network-Reinstall-System-Modify/releases">
+    <img src="https://img.shields.io/badge/release-4.1.0-blue.svg?">
+  </a>
+  
+  <a href="https://github.com/MeowLove/Network-Reinstall-System-Modify/releases">
+    <img src="https://img.shields.io/github/stars/MeowLove/Network-Reinstall-System-Modify.svg?style=flat-square&label=Stars&logo=github">
+  </a>
+  
+  <a href="https://github.com/MeowLove/Network-Reinstall-System-Modify/">
+    <img src="https://img.shields.io/github/forks/MeowLove/Network-Reinstall-System-Modify.svg?style=flat-square&label=Forks&logo=github">
+  </a>
+  
+  <a href="https://t.me/Technical_Blog">
+    <img src="https://img.shields.io/badge/Contact-telegram-orange">
+  </a>
+  
+</div>
+<br>
+
+
+
 # Network-Reinstall-System-Modify
 It can reinstall CentOS, Debian, Ubuntu, Windows 2003, 7, 2008R2, 2012R2, 2016, 2019 and other systems (continuously added) via the Internet, and can install any system via mounting remote network ISO.
 
@@ -48,8 +92,8 @@ A：You can join my Telegram channel and discussion groups for instant communica
 ## End Notes
 [Network-Reinstall-System-Modify](https://www.cxthhhhh.com/)
 
-Version：V3.1.0  
-Date：2020/09/15
+Version：V4.0.1  
+Date：2021/04/16
 
 [CXT - Enjoy Life | 生活、技术、交友、分享 - 自天佑之，吉无不利](https://www.cxthhhhh.com/)  
 https://www.cxthhhhh.com/

@@ -23,66 +23,82 @@ echo "=                                                              ="
 echo "=           一键网络重装系统 - 魔改版（图形化安装）            ="
 echo "=        Network-Reinstall-System-Modify (Graphical Install)   ="
 echo "=                                                              ="
-echo "=                                https://www.cxthhhhh.com      ="
+echo "=             V4.0.1             https://www.cxthhhhh.com      ="
 echo "=                                                              ="
 echo "================================================================"
 echo "                                                                "
-ech="Which System do you want to Install:"
+echo "您想安装哪个系统(Which System want to Install):"
 echo "                                                                "
-echo "  0) Latest 【Bare-metal System Deployment Platform】(Recommend)"
+echo "  00) Latest 【Bare-metal System Deployment Platform】(Recommend)"
+echo "  00) Latest 【CXT裸机系统部署平台】(推荐极客使用，小白勿扰)"
 echo "                                                                "
-echo "  1) Latest 【CentOS 8】(Recommend)"
-echo "  2) Latest 【CentOS 7】"
+echo "  11) Latest 【CentOS 8】(Recommend)"
+echo "  12) Latest 【CentOS 7】"
 echo "                                                                "
-echo "  3) Latest 【Debian 10】(Recommend)"
-echo "  4) Latest 【Debian 9】"
+echo "  21) Latest 【Debian 10】(Recommend)"
+echo "  22) Latest 【Debian 9】"
 echo "                                                                "
-echo "  5) Latest 【Ubuntu 20.04】(Recommend)"
-echo "  6) Latest 【Ubuntu 18.04】"
-echo "  7) Latest 【Ubuntu 16.04】"
+echo "  31) Latest 【Ubuntu 20.04】(Recommend)"
+echo "  32) Latest 【Ubuntu 18.04】"
 echo "                                                                "
-echo "  8) Microsoft 【Windows Server 2019】(Recommend)"
-echo "  9) Microsoft 【Windows Server 2016】"
-echo "  10) Microsoft 【Windows Server 2012】"
+echo "  41) Latest 【OpenWRT】"
+echo "  42) Latest 【OpenWRT UEFI】支持UEFI启动模式"
 echo "                                                                "
-echo "  ======以下系统已经过时，失去官方技术支持，不推荐使用。======  "
+echo "  51) Microsoft 【Windows Server 2019】(Recommend)"
+echo "  52) Microsoft 【Windows Server 2019 UEFI】支持UEFI启动"
+echo "  53) Microsoft 【Windows Server 2016】"
+echo "  54) Microsoft 【Windows Server 2012】"
+echo "  55) Microsoft 【Windows Server 2012 UEFI】支持UEFI启动"
+echo "                                                                "
+echo "  ======以下系统生命周期已经结束，失去官方支持，不推荐使用。======  "
 echo "  ====== The system is outdated and is not recommended. ======  "
 echo "                                                                "
-echo "  31) Latest 【CentOS 6】"
-echo "  32) Latest 【Debian 8】"
-echo "  33) Latest 【Debian 7】"
+echo "  13) Latest 【CentOS 6】"
+echo "  23) Latest 【Debian 8】"
+echo "  24) Latest 【Debian 7】"
+echo "  33) Latest 【Ubuntu 16.04】"
 echo "  34) Latest 【Ubuntu 14.04】"
-echo "  35) Microsoft 【Windows 10 Lite】"
-echo "  36) Microsoft 【Windows Server 2008R2】"
-echo "  37) Microsoft 【Windows 7 Vienna】"
-echo "  38) Microsoft 【Windows_Server_2003】"
+echo "  56) Microsoft 【Windows 10 Lite】"
+echo "  57) Microsoft 【Windows 10 Lite UEFI】支持UEFI启动"
+echo "  58) Microsoft 【Windows Server 2008R2】"
+echo "  59) Microsoft 【Windows_Server_2003R2】"
 echo "                                                                "
 echo '  Custom DD System：bash Network-Reinstall-System-Modify.sh -DD "%URL%" '
 echo "                                                                "
 echo "================================================================"
 echo "                                                                "
-echo -n "Enter the System Identification Nnumber (for example: 0)"
+echo -n "Enter the System Identification Nnumber (for example: 00)"
 read Num
 case $Num in
-  0) bash Network-Reinstall-System-Modify.sh -CXT_Bare-metal_System_Deployment_Platform ;;
-  1) bash Network-Reinstall-System-Modify.sh -CentOS_8 ;;
-  2) bash Network-Reinstall-System-Modify.sh -CentOS_7 ;;
-  3) bash Network-Reinstall-System-Modify.sh -Debian_10 ;;
-  4) bash Network-Reinstall-System-Modify.sh -Debian_9 ;;
-  5) bash Network-Reinstall-System-Modify.sh -Ubuntu_20.04 ;;
-  6) bash Network-Reinstall-System-Modify.sh -Ubuntu_18.04 ;;
-  7) bash Network-Reinstall-System-Modify.sh -Ubuntu_16.04;;
-  8) bash Network-Reinstall-System-Modify.sh -Windows_Server_2019;;
-  9) bash Network-Reinstall-System-Modify.sh -Windows_Server_2016 ;;
-  10) bash Network-Reinstall-System-Modify.sh -Windows_Server_2012R2 ;;
+  00) bash Network-Reinstall-System-Modify.sh -CXT_Bare-metal_System_Deployment_Platform ;;
+
+  11) bash Network-Reinstall-System-Modify.sh -CentOS_8 ;;
+  12) bash Network-Reinstall-System-Modify.sh -CentOS_7 ;;
+
+  21) bash Network-Reinstall-System-Modify.sh -Debian_10 ;;
+  22) bash Network-Reinstall-System-Modify.sh -Debian_9 ;;
+
+  31) bash Network-Reinstall-System-Modify.sh -Ubuntu_20.04 ;;
+  32) bash Network-Reinstall-System-Modify.sh -Ubuntu_18.04 ;;
+
+  41) bash Network-Reinstall-System-Modify.sh -OpenWRT ;;
+  42) bash Network-Reinstall-System-Modify.sh -OpenWRT_UEFI ;;
+
+  51) bash Network-Reinstall-System-Modify.sh -Windows_Server_2019;;
+  51) bash Network-Reinstall-System-Modify.sh -Windows_Server_2019_UEFI;;
+  52) bash Network-Reinstall-System-Modify.sh -Windows_Server_2016 ;;
+  53) bash Network-Reinstall-System-Modify.sh -Windows_Server_2012R2 ;;
+  51) bash Network-Reinstall-System-Modify.sh -Windows_Server_2012R2_UEFI;;
   
-  31) bash Network-Reinstall-System-Modify.sh -CentOS_6 ;;
-  32) bash Network-Reinstall-System-Modify.sh -Debian_8 ;;
-  33) bash Network-Reinstall-System-Modify.sh -Debian_7 ;;
+  13) bash Network-Reinstall-System-Modify.sh -CentOS_6 ;;
+  23) bash Network-Reinstall-System-Modify.sh -Debian_8 ;;
+  24) bash Network-Reinstall-System-Modify.sh -Debian_7 ;;
+  33) bash Network-Reinstall-System-Modify.sh -Ubuntu_16.04;;
   34) bash Network-Reinstall-System-Modify.sh -Ubuntu_14.04 ;;
-  35) bash Network-Reinstall-System-Modify.sh -Windows_10_Lite ;;
-  36) bash Network-Reinstall-System-Modify.sh -Windows_Server_2008R2 ;;
-  37) bash Network-Reinstall-System-Modify.sh -Windows_7_Vienna ;;
-  38) bash Network-Reinstall-System-Modify.sh -Windows_Server_2003 ;;
+  56) bash Network-Reinstall-System-Modify.sh -Windows_10_Lite ;;
+  57) bash Network-Reinstall-System-Modify.sh -Windows_10_Lite_UEFI ;;
+  58) bash Network-Reinstall-System-Modify.sh -Windows_Server_2008R2 ;;
+  59) bash Network-Reinstall-System-Modify.sh -Windows_Server_2003R2 ;;
+
   *) echo "Wrong input, please enter again!" ;;
 esac
