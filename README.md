@@ -57,8 +57,9 @@
   <img src="https://raw.githubusercontent.com/MeowLove/Network-Reinstall-System-Modify/master/background/Preview2021.png">
 </div>
 
-
-# 一键网络重装系统 - 魔改版（Network-Reinstall-System-Modify）
+# 一键网络重装系统 - 魔改版
+# Network-Reinstall-System-Modify
+### 一键网络重装系统 - 魔改版（Network-Reinstall-System-Modify）
   
 [一键网络重装系统 - 魔改版（Network-Reinstall-System-Modify）](https://www.cxthhhhh.com/network-reinstall-system-modify)可以通过互联网重新安装Linux和Windows以及常用操作系统。  
 例如：CentOS、Debian、Ubuntu、Windows 2012R2、Windows Server 2019、Proxmox-VE、OpenWRT等常见系统，还可以通过极客功能[裸机系统部署平台](https://www.cxthhhhh.com/bare-metal_system_deployment_platform)挂载网络【ISO镜像】远程安装任何系统。  
@@ -75,13 +76,15 @@ Common systems such as CentOS, Debian, Ubuntu, Windows 2012R2, Windows Server 20
 ## 需求（Realistic Demand）
 为什么我们需要重新安装一个纯系统？（Why do we need to reinstall a pure system?）
 <br>
-- 服务提供商提供的系统模板可能有一些内置软件，甚至与我们即将安装的软件冲突，导致安装失败。
-- ISO挂载并不是所有服务提供商都提供的服务。有些IPIM/KVM传输速度太慢，安装效率很差。
-- Linux/Windows可能会遇到一些在使用中找不到的莫名其妙的错误。相信你一定深有体会！
+
+- 服务提供商提供的系统模板可能有一些内置软件，甚至与我们即将安装的软件冲突，导致安装失败。  
+- ISO挂载并不是所有服务提供商都提供的服务。有些IPIM/KVM传输速度太慢，安装效率很差。  
+- Linux/Windows可能会遇到一些在使用中找不到的莫名其妙的错误。相信你一定深有体会！  
 <br>
-- The system template provided by the service provider may have some built-in software, even conflicting with the software we are about to install, resulting in the installation failure.
-- ISO mount is not a service provided by all service providers. Some IPIM/KVM transmission speeds are too slow and installation efficiency is poor.
-- Linux/Windows may encounter some inexplicable errors that cannot be found in use. I believe you must have a deep understanding!
+
+- The system template provided by the service provider may have some built-in software, even conflicting with the software we are about to install, resulting in the installation failure.  
+- ISO mount is not a service provided by all service providers. Some IPIM/KVM transmission speeds are too slow and installation efficiency is poor.  
+- Linux/Windows may encounter some inexplicable errors that cannot be found in use. I believe you must have a deep understanding!  
 <br>
 
 
