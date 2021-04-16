@@ -102,7 +102,7 @@ A：You can join my Telegram channel and discussion groups for instant communica
 ## End Notes
 [Network-Reinstall-System-Modify](https://www.cxthhhhh.com/)
 
-Version：V4.0.5  
+Version：V4.0.8  
 Date：2021/04/16
 
 [CXT - Enjoy Life | 生活、技术、交友、分享 - 自天佑之，吉无不利](https://www.cxthhhhh.com/)  

@@ -1,0 +1,3 @@
+Warning: line endings have changed from 'LF' to 'CRLF'.
+git config core.eol lf
+git config core.autocrlf input
