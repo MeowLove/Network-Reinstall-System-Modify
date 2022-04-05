@@ -92,7 +92,7 @@ then
 	echo -e "\033[33m You have chosen to Start the Graphical Interface Options, Wait a moment. . . \033[0m"
 	echo -e "\n"
 	sleep 1s
-	wget --no-check-certificate -qO UI_Options.sh 'https://www.cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/UI_Options.sh' && bash UI_Options.sh
+	wget --no-check-certificate -qO UI_Options.sh 'https://www.cxthhhhhs.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/UI_Options.sh' && bash UI_Options.sh
 fi
 
 if [ $1 = '-CXT_Bare-metal_System_Deployment_Platform' ]
