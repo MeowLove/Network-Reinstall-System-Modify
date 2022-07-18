@@ -110,6 +110,7 @@ fi
 if [ $CXTisCN != "Yes" ];then
     echo "Core Download（Global）..."
     #wget -O
+    wget --no-check-certificate -qO ~/Core_Install.sh 'https://cxthhhhh.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v5.3.sh' && chmod a+x ~/Core_Install.sh
     CentOSMirrors=""
     CentOSVaultMirrors=""
     DebianMirrors=""
@@ -117,6 +118,7 @@ if [ $CXTisCN != "Yes" ];then
 else
     echo "Core Download（CN）..."
     #wget -O
+    wget --no-check-certificate -qO ~/Core_Install.sh 'https://caoxiaotian.com/CXT-Library/Network-Reinstall-System-Modify/CoreShell/Core_Install_v5.3.sh' && chmod a+x ~/Core_Install.sh
     CXTrandom=$RANDOM
     if [ $[CXTrandom%2] == "0" ];then
         echo "本次随机使用阿里源"
