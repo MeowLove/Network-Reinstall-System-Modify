@@ -22,7 +22,7 @@
   </a>
   
   <a href="https://github.com/MeowLove/Network-Reinstall-System-Modify/releases">
-    <img src="https://img.shields.io/badge/release-4.1.0-blue.svg?">
+    <img src="https://img.shields.io/badge/release-5.3.0-blue.svg?">
   </a>
   
   <a href="https://github.com/MeowLove/Network-Reinstall-System-Modify/releases">
@@ -33,7 +33,7 @@
     <img src="https://img.shields.io/github/forks/MeowLove/Network-Reinstall-System-Modify.svg?style=flat-square&label=Forks&logo=github">
   </a>
 
-  <a href="https://bbs.cxthhhhh.com/forum.php">
+  <a href="https://bbs.cxthhhhh.com/">
     <img src="https://img.shields.io/badge/Contact-Forum-orange">
   </a>
 
