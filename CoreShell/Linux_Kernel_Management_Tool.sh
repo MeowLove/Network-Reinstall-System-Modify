@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Linux Kernel Management Tool - Enhanced
-# Version 3.1.5
+# Version 3.1.6
 #
 # Supported families:
 #   - Debian / Ubuntu
@@ -19,7 +19,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 PROGRAM_NAME="Linux Kernel Management Tool - Enhanced"
-PROGRAM_VERSION="3.1.5"
+PROGRAM_VERSION="3.1.6"
 
 COMMAND="menu"
 CHANNEL=""
@@ -288,6 +288,8 @@ apt_kernel_flavor() {
     case "$(uname -r)" in
         *-cloud-amd64) printf '%s\n' 'cloud-amd64' ;;
         *-cloud-arm64) printf '%s\n' 'cloud-arm64' ;;
+        *-amd64)       printf '%s\n' 'amd64' ;;
+        *-arm64)       printf '%s\n' 'arm64' ;;
         *-generic)     printf '%s\n' 'generic' ;;
         *-virtual)     printf '%s\n' 'virtual' ;;
         *-lowlatency)  printf '%s\n' 'lowlatency' ;;
@@ -302,6 +304,23 @@ apt_kernel_flavor() {
     esac
 }
 
+apt_kernel_package_matches_flavor() {
+    local package="$1"
+    local requested_flavor="$2"
+
+    case "${requested_flavor}" in
+        amd64)
+            [[ "${package}" == *-amd64 && "${package}" != *-cloud-amd64 ]]
+            ;;
+        arm64)
+            [[ "${package}" == *-arm64 && "${package}" != *-cloud-arm64 ]]
+            ;;
+        *)
+            [[ "${package}" == *-"${requested_flavor}" ]]
+            ;;
+    esac
+}
+
 apt_installed_kernel_rows() {
     local requested_flavor="${1:-}"
     local status package version
@@ -311,7 +330,9 @@ apt_installed_kernel_rows() {
     while IFS=$'\t' read -r status package version; do
         [[ "${status:0:2}" == "ii" ]] || continue
         [[ "${package}" =~ ^linux-image-[0-9] ]] || continue
-        [[ -z "${requested_flavor}" || "${package}" == *-"${requested_flavor}" ]] || continue
+        if [[ -n "${requested_flavor}" ]]; then
+            apt_kernel_package_matches_flavor "${package}" "${requested_flavor}" || continue
+        fi
         printf '%s\t%s\n' "${package}" "${version}"
     done < <(
         dpkg-query -W \
