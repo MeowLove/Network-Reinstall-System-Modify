@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Linux Kernel Management Tool - Enhanced
-# Version 3.1.6
+# Version 3.1.8
 #
 # Supported families:
 #   - Debian / Ubuntu
@@ -19,7 +19,7 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 PROGRAM_NAME="Linux Kernel Management Tool - Enhanced"
-PROGRAM_VERSION="3.1.6"
+PROGRAM_VERSION="3.1.8"
 
 COMMAND="menu"
 CHANNEL=""
@@ -319,6 +319,106 @@ apt_kernel_package_matches_flavor() {
             [[ "${package}" == *-"${requested_flavor}" ]]
             ;;
     esac
+}
+
+apt_kernel_release_matches_flavor() {
+    local release="$1"
+    local requested_flavor="$2"
+
+    apt_kernel_package_matches_flavor \
+        "linux-image-${release}" "${requested_flavor}"
+}
+
+apt_boot_file_owned_by_installed_package() {
+    local path="$1"
+    local owner_line owner
+
+    while IFS= read -r owner_line; do
+        # dpkg-query -S uses ": " as the separator; the package name itself
+        # can contain a colon for its architecture qualifier.
+        owner="${owner_line%%: *}"
+        [[ -n "${owner}" ]] || continue
+        apt_package_installed "${owner}" && return 0
+    done < <(dpkg-query -S "${path}" 2>/dev/null || true)
+
+    return 1
+}
+
+apt_orphaned_boot_files() {
+    local requested_flavor="$1"
+    local current_release path filename release
+
+    current_release="$(uname -r)"
+
+    while IFS= read -r -d '' path; do
+        filename="${path##*/}"
+        case "${filename}" in
+            vmlinuz-*)    release="${filename#vmlinuz-}" ;;
+            initrd.img-*) release="${filename#initrd.img-}" ;;
+            *)            continue ;;
+        esac
+
+        [[ "${release}" == "${current_release}" ]] && continue
+        apt_kernel_release_matches_flavor \
+            "${release}" "${requested_flavor}" || continue
+        apt_boot_file_owned_by_installed_package "${path}" && continue
+        printf '%s\n' "${path}"
+    done < <(
+        find /boot -maxdepth 1 -type f \
+            \( -name 'vmlinuz-*' -o -name 'initrd.img-*' \) -print0 2>/dev/null
+    )
+}
+
+apt_kernel_component_packages() {
+    local release="$1"
+    local status package package_name
+
+    while IFS=$'\t' read -r status package; do
+        [[ "${status:0:2}" == "ii" ]] || continue
+        package_name="${package%:*}"
+        case "${package_name}" in
+            "linux-base-${release}"|\
+            "linux-binary-${release}"|\
+            "linux-modules-${release}"|\
+            "linux-modules-extra-${release}")
+                printf '%s\n' "${package}"
+                ;;
+        esac
+    done < <(
+        dpkg-query -W -f='${db:Status-Abbrev}\t${binary:Package}\n' \
+            "linux-base-${release}" \
+            "linux-binary-${release}" \
+            "linux-modules-${release}" \
+            "linux-modules-extra-${release}" 2>/dev/null || true
+    )
+}
+
+apt_orphaned_kernel_component_packages() {
+    local requested_flavor="$1"
+    local current_release status package package_name release
+
+    current_release="$(uname -r)"
+
+    while IFS=$'\t' read -r status package; do
+        [[ "${status:0:2}" == "ii" ]] || continue
+        package_name="${package%:*}"
+        case "${package_name}" in
+            linux-base-*)          release="${package_name#linux-base-}" ;;
+            linux-binary-*)        release="${package_name#linux-binary-}" ;;
+            linux-modules-extra-*) release="${package_name#linux-modules-extra-}" ;;
+            linux-modules-*)       release="${package_name#linux-modules-}" ;;
+            *)                     continue ;;
+        esac
+
+        [[ "${release}" == "${current_release}" ]] && continue
+        apt_kernel_release_matches_flavor \
+            "${release}" "${requested_flavor}" || continue
+        apt_package_installed "linux-image-${release}" && continue
+        printf '%s\n' "${package}"
+    done < <(
+        dpkg-query -W -f='${db:Status-Abbrev}\t${binary:Package}\n' \
+            'linux-base-*' 'linux-binary-*' 'linux-modules-*' 2>/dev/null || true
+    ) | sort -u
 }
 
 apt_installed_kernel_rows() {
@@ -830,6 +930,9 @@ clean_kernels_apt() {
     local -a installed_packages=()
     local -a protected_packages=()
     local -a packages_to_remove=()
+    local -a packages_to_purge=()
+    local -a component_packages=()
+    local -a orphaned_boot_files=()
 
     current_pkg="$(apt_current_kernel_package)"
     meta="$(apt_tracking_package)"
@@ -906,17 +1009,53 @@ clean_kernels_apt() {
         done <<< "${backup_packages}"
     fi
 
-    if [[ "${#packages_to_remove[@]}" -eq 0 ]]; then
+    packages_to_purge=("${packages_to_remove[@]}")
+    for pkg in "${packages_to_remove[@]}"; do
+        mapfile -t component_packages < <(
+            apt_kernel_component_packages "${pkg#linux-image-}"
+        )
+        packages_to_purge+=("${component_packages[@]}")
+    done
+
+    if [[ "${#packages_to_purge[@]}" -eq 0 ]]; then
+        mapfile -t component_packages < <(
+            apt_orphaned_kernel_component_packages "${current_flavor}"
+        )
+        packages_to_purge=("${component_packages[@]}")
+    fi
+
+    if [[ "${#packages_to_purge[@]}" -eq 0 ]]; then
         echo "没有需要删除的旧内核。"
+
+        mapfile -t orphaned_boot_files < <(apt_orphaned_boot_files "${current_flavor}")
+        [[ "${#orphaned_boot_files[@]}" -gt 0 ]] || return 0
+
+        echo "将清理未由已安装内核包管理的旧 /boot 文件："
+        printf '  %s\n' "${orphaned_boot_files[@]}"
+
+        if [[ "${DRY_RUN}" == "1" ]]; then
+            print_command rm -f -- "${orphaned_boot_files[@]}"
+            return 0
+        fi
+
+        confirm "确认删除以上残留启动文件并刷新 GRUB？" || {
+            echo "操作已取消。"
+            return 0
+        }
+
+        rm -f -- "${orphaned_boot_files[@]}"
+        update_apt_bootloader
+        dpkg --audit
+        apt-get check
         return 0
     fi
 
     echo "将删除："
-    printf '  %s\n' "${packages_to_remove[@]}"
+    printf '  %s\n' "${packages_to_purge[@]}"
 
     if [[ "${DRY_RUN}" == "1" ]]; then
-        print_command apt-get -s purge "${packages_to_remove[@]}"
-        apt-get -s purge "${packages_to_remove[@]}" || true
+        print_command apt-get -s purge "${packages_to_purge[@]}"
+        apt-get -s purge "${packages_to_purge[@]}" || true
         if [[ "${AUTOREMOVE}" == "1" ]]; then
             print_command apt-get -s autoremove --purge
             apt-get -s autoremove --purge || true
@@ -938,7 +1077,7 @@ clean_kernels_apt() {
     fi
 
     apt-mark manual "${protected_packages[@]}" >/dev/null
-    apt-get purge -y "${packages_to_remove[@]}"
+    apt-get purge -y "${packages_to_purge[@]}"
 
     if [[ "${AUTOREMOVE}" == "1" ]]; then
         echo "以下是全局 autoremove 的模拟事务："
@@ -948,6 +1087,13 @@ clean_kernels_apt() {
         else
             echo "已跳过全局 autoremove。"
         fi
+    fi
+
+    mapfile -t orphaned_boot_files < <(apt_orphaned_boot_files "${current_flavor}")
+    if [[ "${#orphaned_boot_files[@]}" -gt 0 ]]; then
+        echo "清理未由已安装内核包管理的旧 /boot 文件："
+        printf '  %s\n' "${orphaned_boot_files[@]}"
+        rm -f -- "${orphaned_boot_files[@]}"
     fi
 
     apt-get clean
