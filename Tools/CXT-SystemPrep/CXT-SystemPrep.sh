@@ -114,7 +114,7 @@ connman.service
 
 usage() {
     cat <<'EOF'
-Usage: cxt-systemprep.sh [options]
+Usage: CXT-SystemPrep.sh [options]
 
 Options:
   --profile PROFILE        Feature preset: test, seal, or privacy
