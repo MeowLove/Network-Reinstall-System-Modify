@@ -6,8 +6,9 @@
 # Run only on a source/template system intended for image preparation.
 # Default: remove logs/history/caches/transient state without resetting clone
 # identity and without rebooting or powering off.
-# Custom application logs outside standard locations are read only when an explicit
-# --paths/--services file is supplied.
+# Application logs outside standard locations are cleaned only when an explicit
+# --extra-paths file is supplied. Related systemd system services are discovered
+# from writable open file descriptors and are stopped without being disabled.
 
 set -eu
 
@@ -27,8 +28,8 @@ REMOVE_SSH_HOST_KEYS=0
 REMOVE_KNOWN_HOSTS=0
 ZERO_FREE_SPACE=0
 WIPE_SWAP=0
-CUSTOM_PATH_FILE=
-CUSTOM_SERVICE_FILE=
+EXTRA_PATH_FILE=
+EXTRA_SERVICE_FILE=
 DRY_RUN=0
 VERIFY=0
 SCRIPT_PATH=
@@ -49,7 +50,12 @@ RUNTIME_RESTORED=0
 FINAL_JOURNAL_STOPPED=0
 ACTIVE_ZERO_FILE=
 DISABLED_SWAP_TARGETS=
+AUTO_STOPPED_UNITS=
+SELF_ANCESTOR_PIDS=
 POWER_ACTION_IN_PROGRESS=0
+DISCOVERED_USER_SERVICE_UNIT=
+OPEN_USER_LOG_UNIT=
+TARGETED_LOGIN_SESSIONS=
 
 STANDARD_CLEANUP_UNITS='
 rsyslog.service
@@ -143,8 +149,8 @@ Options:
                            with zeros (slow; improves raw DD image compression)
   --wipe-swap              Zero active disk swap and recreate its UUID/label; swap
                            remains off until next boot (slow; requires enough RAM)
-  --paths FILE             Read extra application log paths from FILE
-  --services FILE          Stop extra application units listed in FILE
+  --extra-paths FILE       Read extra application log/cache paths from FILE
+  --extra-services FILE    Stop additional system-manager units listed in FILE
   --dry-run                Print the resolved plan; make no changes
   --verify                 Write advisory verification to cxt-systemprep.log in
                            the private runtime directory
@@ -158,8 +164,17 @@ Extra-path file format:
   /var/log and /var/cache, the path must contain a dedicated log, cache, history,
   trace, audit, tmp, or temp component. List only disposable application data.
 
-Service-file format:
-  One systemd service unit per line; empty lines and # comments are ignored.
+Extra-service file format:
+  One system-manager .service, .socket, .timer, or .path unit per line; empty
+  lines and # comments are ignored. Critical runtime units, user-manager units,
+  missing units, and arbitrary .target units are rejected.
+
+Automatic writer handling:
+  During real cleanup, every mapped system service writing a selected cleanup
+  target or other log-like file is stopped and runtime-masked. Nonstandard
+  application logs are preserved unless selected by --extra-paths. In no-power
+  mode, a systemd user-service writer is blocked because exact restoration cannot
+  be guaranteed. With reboot or poweroff, user resources terminate before sealing.
 
 Profiles never select reboot or poweroff:
   test     Core logs, histories, caches, package history, and container logs only
@@ -169,10 +184,10 @@ Profiles never select reboot or poweroff:
 
 Real execution requirements and lifecycle:
   A modern systemd host with systemd-run --collect and loginctl is required.
-  The script copies itself and custom list files into a private 0700 directory
+  The script copies itself and extra list files into a private 0700 directory
   under tmpfs-backed /run, verifies the script copy by SHA-256, starts a
   transient service, terminates login sessions, and removes the source script.
-  Original --paths/--services list files are not deleted; place them under /run
+  Original --extra-paths/--extra-services list files are not deleted; place them under /run
   as well when their automatic removal at reboot is desired.
   On success, the runtime script and transient payload are also removed.
   --help and --dry-run never stage, start a service, terminate sessions, or
@@ -324,15 +339,15 @@ while [ "$#" -gt 0 ]; do
         --remove-known-hosts) REMOVE_KNOWN_HOSTS=1 ;;
         --zero-free-space) ZERO_FREE_SPACE=1 ;;
         --wipe-swap) WIPE_SWAP=1 ;;
-        --paths)
-            [ "$#" -ge 2 ] || die "--paths requires a file"
+        --extra-paths)
+            [ "$#" -ge 2 ] || die "--extra-paths requires a file"
             shift
-            CUSTOM_PATH_FILE=$1
+            EXTRA_PATH_FILE=$1
             ;;
-        --services)
-            [ "$#" -ge 2 ] || die "--services requires a file"
+        --extra-services)
+            [ "$#" -ge 2 ] || die "--extra-services requires a file"
             shift
-            CUSTOM_SERVICE_FILE=$1
+            EXTRA_SERVICE_FILE=$1
             ;;
         --dry-run) DRY_RUN=1 ;;
         --verify) VERIFY=1 ;;
@@ -506,34 +521,349 @@ custom_path_is_mount_root() {
     [ -n "$custom_mount_path" ] && [ "$custom_mount_path" = "$custom_mount_target" ]
 }
 
-validate_custom_lists() {
-    if [ -n "$CUSTOM_SERVICE_FILE" ]; then
-        [ -r "$CUSTOM_SERVICE_FILE" ] || die "custom service file is not readable: $CUSTOM_SERVICE_FILE"
+validate_extra_lists() {
+    if [ -n "$EXTRA_SERVICE_FILE" ]; then
+        [ -r "$EXTRA_SERVICE_FILE" ] || die "extra service file is not readable: $EXTRA_SERVICE_FILE"
         while IFS= read -r unit || [ -n "$unit" ]; do
             case $unit in ''|'#'*) continue ;; esac
             case $unit in *[!A-Za-z0-9_.@:-]*) die "invalid unit name: $unit" ;; esac
-        done < "$CUSTOM_SERVICE_FILE"
+            case $unit in
+                *.service|*.socket|*.timer|*.path|*.target) ;;
+                *) die "unsupported unit type in --extra-services: $unit" ;;
+            esac
+        done < "$EXTRA_SERVICE_FILE"
     fi
 
-    if [ -n "$CUSTOM_PATH_FILE" ]; then
-        [ -r "$CUSTOM_PATH_FILE" ] || die "custom path file is not readable: $CUSTOM_PATH_FILE"
-        have readlink || die "custom path validation requires readlink"
-        have findmnt || die "custom path validation requires findmnt"
+    if [ -n "$EXTRA_PATH_FILE" ]; then
+        [ -r "$EXTRA_PATH_FILE" ] || die "extra path file is not readable: $EXTRA_PATH_FILE"
+        have readlink || die "extra path validation requires readlink"
+        have findmnt || die "extra path validation requires findmnt"
         while IFS= read -r custom || [ -n "$custom" ]; do
             case $custom in ''|'#'*) continue ;; esac
-            safe_custom_path "$custom" || die "unsafe custom path rejected: $custom"
+            safe_custom_path "$custom" || die "unsafe extra path rejected: $custom"
             if have readlink && [ -e "$custom" ]; then
                 canonical=$(readlink -f -- "$custom" 2>/dev/null || printf '')
-                [ -n "$canonical" ] || die "could not resolve custom path: $custom"
+                [ -n "$canonical" ] || die "could not resolve extra path: $custom"
                 safe_custom_path "$canonical" ||
-                    die "custom path resolves to a protected target: $custom -> $canonical"
+                    die "extra path resolves to a protected target: $custom -> $canonical"
             fi
-            [ ! -L "$custom" ] || die "symlinked custom path rejected: $custom"
-            custom_path_is_mount_root "$custom" && die "mount-root custom path rejected: $custom"
+            [ ! -L "$custom" ] || die "symlinked extra path rejected: $custom"
+            custom_path_is_mount_root "$custom" && die "mount-root extra path rejected: $custom"
             :
-        done < "$CUSTOM_PATH_FILE"
+        done < "$EXTRA_PATH_FILE"
     fi
     return 0
+}
+
+fd_is_writable() {
+    writable_fd=$1
+    writable_fd_number=${writable_fd##*/}
+    writable_fd_dir=${writable_fd%/fd/*}
+    writable_flags=$(awk '$1 == "flags:" {print $2; exit}' \
+        "$writable_fd_dir/fdinfo/$writable_fd_number" 2>/dev/null || printf '')
+    case $writable_flags in
+        ''|*[!0-7]*) return 0 ;;
+    esac
+    writable_access=$((0$writable_flags & 3))
+    [ "$writable_access" -ne 0 ]
+}
+
+normalize_open_target() {
+    NORMALIZED_OPEN_TARGET=$1
+    case $NORMALIZED_OPEN_TARGET in
+        *' (deleted)') NORMALIZED_OPEN_TARGET=${NORMALIZED_OPEN_TARGET% (deleted)} ;;
+    esac
+}
+
+resolve_open_fd_target() {
+    resolved_fd=$1
+    resolved_target=$(readlink -- "$resolved_fd" 2>/dev/null || printf '')
+    case $resolved_target in
+        'socket:['*']')
+            socket_inode=${resolved_target#socket:[}
+            socket_inode=${socket_inode%]}
+            resolved_target=$(awk -v inode="$socket_inode" \
+                '$7 == inode && NF >= 8 && $8 ~ /^\// {print $8; exit}' \
+                /proc/net/unix 2>/dev/null || printf '')
+            ;;
+    esac
+    [ -n "$resolved_target" ] || return 1
+    normalize_open_target "$resolved_target"
+    RESOLVED_OPEN_TARGET=$NORMALIZED_OPEN_TARGET
+}
+
+build_self_ancestor_pids() {
+    ancestor_pid=$$
+    SELF_ANCESTOR_PIDS=
+    while :; do
+        case $ancestor_pid in ''|*[!0-9]*) break ;; esac
+        SELF_ANCESTOR_PIDS="$SELF_ANCESTOR_PIDS $ancestor_pid"
+        [ "$ancestor_pid" -gt 1 ] || break
+        parent_pid=$(awk '$1 == "PPid:" {print $2; exit}' \
+            "/proc/$ancestor_pid/status" 2>/dev/null || printf '')
+        [ -n "$parent_pid" ] && [ "$parent_pid" != "$ancestor_pid" ] || break
+        ancestor_pid=$parent_pid
+    done
+}
+
+pid_is_self_or_ancestor() {
+    [ -n "$SELF_ANCESTOR_PIDS" ] || build_self_ancestor_pids
+    case " $SELF_ANCESTOR_PIDS " in
+        *" $1 "*) return 0 ;;
+    esac
+    return 1
+}
+
+path_is_builtin_cleanup_target() {
+    cleanup_target=$1
+    case $cleanup_target in
+        /var/log/journal/*|/run/log/journal/*)
+            return 1
+            ;;
+        /var/log/*|/run/log/*|/var/adm/*|/var/account/*|/var/crash/*|\
+        /var/spool/abrt/*|/var/lib/systemd/coredump/*|/var/lib/apport/coredump/*|\
+        /var/lib/systemd/pstore/*|/sys/fs/pstore/*|/var/lib/rsyslog/*|\
+        /var/spool/rsyslog/*|/var/lib/syslog-ng/*|/var/spool/audit/*|\
+        /var/spool/audispd/*|/var/lib/systemd/journal-upload/*|\
+        /var/lib/docker/containers/*/*-json.log|\
+        /var/lib/docker/containers/*/container.log|\
+        /var/lib/containers/storage/overlay-containers/*/userdata/ctr.log|\
+        /var/lib/containers/storage/overlay-containers/*/userdata/container.log|\
+        /var/lib/kubelet/pods/*/containers/*.log|\
+        /var/lib/kubelet/pods/*/containers/*.log.*|/tmp/*|/var/tmp/*|\
+        /run/faillock/*|/var/run/faillock/*|/var/lib/faillock/*|\
+        /var/lib/lastlog/*|/var/spool/anacron/*|/var/lib/systemd/timers/*|\
+        /var/cache/abrt-di/*|/var/cache/dnf/*|/var/cache/libdnf5/*|\
+        /var/cache/yum/*|/var/cache/PackageKit/*|/var/cache/apt/archives/*|\
+        /var/lib/apt/lists/*|*/.cache/*|*/.thumbnails/*)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+path_is_extra_cleanup_target() {
+    extra_target=$1
+    [ -n "$EXTRA_PATH_FILE" ] && [ -r "$EXTRA_PATH_FILE" ] || return 1
+    while IFS= read -r extra_path || [ -n "$extra_path" ]; do
+        case $extra_path in ''|'#'*) continue ;; esac
+        extra_path=${extra_path%/}
+        case $extra_target in
+            "$extra_path"|"$extra_path"/*) return 0 ;;
+        esac
+    done < "$EXTRA_PATH_FILE"
+    return 1
+}
+
+path_is_cleanup_log_target() {
+    path_is_builtin_cleanup_target "$1" || path_is_extra_cleanup_target "$1"
+}
+
+path_looks_like_log() {
+    log_like_target=$(printf '%s\n' "$1" | tr '[:upper:]' '[:lower:]')
+    case $log_like_target in
+        */log|*/logs|*/log/*|*/logs/*|*.log|*.log.*|*.trace|*.trace.*|*.out|*.err)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+pid_systemd_service_unit() {
+    service_pid=$1
+    DISCOVERED_USER_SERVICE_UNIT=
+    DISCOVERED_SERVICE_UNIT=$(awk -F: '
+        {
+            count = split($NF, part, "/")
+            for (part_index = count; part_index >= 1; part_index--) {
+                if (part[part_index] ~ /[.]service$/) {
+                    print part[part_index]
+                    exit
+                }
+            }
+        }
+    ' "/proc/$service_pid/cgroup" 2>/dev/null || printf '')
+    [ -n "$DISCOVERED_SERVICE_UNIT" ] || return 1
+    if grep -Eq '(^|/)user[.]slice(/|$)' "/proc/$service_pid/cgroup" 2>/dev/null; then
+        DISCOVERED_USER_SERVICE_UNIT=$DISCOVERED_SERVICE_UNIT
+        DISCOVERED_SERVICE_UNIT=
+        return 1
+    fi
+    [ "$(systemctl show -p LoadState --value "$DISCOVERED_SERVICE_UNIT" 2>/dev/null || printf not-found)" != not-found ]
+}
+
+unit_in_standard_cleanup_list() {
+    requested_unit=$1
+    for listed_unit in $STANDARD_CLEANUP_UNITS; do
+        [ "$listed_unit" = "$requested_unit" ] && return 0
+    done
+    return 1
+}
+
+unit_in_extra_service_file() {
+    requested_unit=$1
+    [ -n "$EXTRA_SERVICE_FILE" ] && [ -r "$EXTRA_SERVICE_FILE" ] || return 1
+    while IFS= read -r listed_unit || [ -n "$listed_unit" ]; do
+        case $listed_unit in ''|'#'*) continue ;; esac
+        [ "$listed_unit" = "$requested_unit" ] && return 0
+    done < "$EXTRA_SERVICE_FILE"
+    return 1
+}
+
+protected_cleanup_unit_name() {
+    case $1 in
+        cxt-systemprep-*.service|\
+        systemd-journald.service|systemd-journald.socket|\
+        systemd-journald-dev-log.socket|systemd-journald-audit.socket|\
+        systemd-logind.service|systemd-user-sessions.service|\
+        user@*.service|user-runtime-dir@*.service|\
+        systemd-udevd.service|systemd-udev-trigger.service|\
+        systemd-udevd-control.socket|systemd-udevd-kernel.socket|\
+        dbus.service|dbus.socket|dbus-broker.service|\
+        systemd-poweroff.service|systemd-reboot.service|systemd-halt.service|\
+        systemd-kexec.service|systemd-soft-reboot.service|systemd-exit.service)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+protected_cleanup_unit() {
+    protected_checked_unit=$1
+    protected_cleanup_unit_name "$protected_checked_unit" && return 0
+    if have systemctl; then
+        protected_canonical_unit=$(systemctl show -p Id --value "$protected_checked_unit" 2>/dev/null || printf '')
+        if [ -n "$protected_canonical_unit" ] && [ "$protected_canonical_unit" != "$protected_checked_unit" ]; then
+            protected_cleanup_unit_name "$protected_canonical_unit" && return 0
+        fi
+    fi
+    return 1
+}
+
+precheck_extra_service_units() {
+    [ -n "$EXTRA_SERVICE_FILE" ] || return 0
+    extra_precheck_heading=0
+    while IFS= read -r extra_unit || [ -n "$extra_unit" ]; do
+        case $extra_unit in ''|'#'*) continue ;; esac
+        extra_unit_issue=
+        case $extra_unit in
+            *.target) extra_unit_issue='arbitrary target units are not supported' ;;
+        esac
+        if [ -n "$extra_unit_issue" ]; then
+            :
+        elif protected_cleanup_unit "$extra_unit"; then
+            extra_unit_issue='critical runtime unit is protected'
+        elif have systemctl; then
+            extra_load_state=$(systemctl show -p LoadState --value "$extra_unit" 2>/dev/null || printf not-found)
+            case $extra_load_state in
+                ''|not-found) extra_unit_issue='unit is not loaded or does not exist' ;;
+            esac
+        fi
+        [ -n "$extra_unit_issue" ] || continue
+        if [ "$DRY_RUN" -eq 1 ]; then
+            if [ "$extra_precheck_heading" -eq 0 ]; then
+                printf '%s\n' '' 'Extra-service safety precheck:'
+                extra_precheck_heading=1
+            fi
+            printf '  BLOCKED unit=%s (%s)\n' "$extra_unit" "$extra_unit_issue"
+            PLAN_BLOCKED=1
+        else
+            die "unsafe extra service rejected: $extra_unit ($extra_unit_issue)"
+        fi
+    done < "$EXTRA_SERVICE_FILE"
+}
+
+print_open_log_writer_plan() {
+    printf '%s\n' '' 'Open cleanup-writer discovery:'
+    plan_writer_found=0
+    plan_seen_writers='
+'
+    for plan_fd in /proc/[0-9]*/fd/*; do
+        [ -L "$plan_fd" ] || continue
+        fd_is_writable "$plan_fd" || continue
+        resolve_open_fd_target "$plan_fd" || continue
+        plan_target=$RESOLVED_OPEN_TARGET
+        case $plan_target in /*) ;; *) continue ;; esac
+        case $plan_target in
+            /var/log/journal/*|/run/log/journal/*) continue ;;
+        esac
+        plan_proc=${plan_fd#/proc/}
+        plan_pid=${plan_proc%%/*}
+        pid_is_self_or_ancestor "$plan_pid" && continue
+        plan_key=$plan_pid:$plan_target
+        case "$plan_seen_writers" in
+            *"
+$plan_key
+"*) continue ;;
+        esac
+        plan_seen_writers=$plan_seen_writers$plan_key'
+'
+        plan_comm=$(cat "/proc/$plan_pid/comm" 2>/dev/null || printf unknown)
+        if path_is_cleanup_log_target "$plan_target"; then
+            plan_writer_found=1
+            if ! pid_systemd_service_unit "$plan_pid"; then
+                if [ -n "$DISCOVERED_USER_SERVICE_UNIT" ]; then
+                    if [ "$ACTION" = none ]; then
+                        printf '  BLOCKED user-unit=%s pid=%s process=%s target=%s (systemd user service cannot be safely restored without a final power action)\n' \
+                            "$DISCOVERED_USER_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+                        PLAN_BLOCKED=1
+                    else
+                        printf '  USER-STOP unit=%s pid=%s process=%s target=%s (user resources terminate before final %s)\n' \
+                            "$DISCOVERED_USER_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target" "$ACTION"
+                    fi
+                else
+                    printf '  BLOCKED pid=%s process=%s target=%s (no systemd system-service mapping)\n' \
+                        "$plan_pid" "$plan_comm" "$plan_target"
+                    PLAN_BLOCKED=1
+                fi
+            elif protected_cleanup_unit "$DISCOVERED_SERVICE_UNIT"; then
+                printf '  BLOCKED unit=%s pid=%s process=%s target=%s (protected runtime dependency)\n' \
+                    "$DISCOVERED_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+                PLAN_BLOCKED=1
+            elif unit_in_standard_cleanup_list "$DISCOVERED_SERVICE_UNIT"; then
+                printf '  BUILT-IN-STOP unit=%s pid=%s process=%s target=%s\n' \
+                    "$DISCOVERED_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+            elif unit_in_extra_service_file "$DISCOVERED_SERVICE_UNIT"; then
+                printf '  EXTRA-STOP unit=%s pid=%s process=%s target=%s\n' \
+                    "$DISCOVERED_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+            else
+                printf '  AUTO-STOP unit=%s pid=%s process=%s target=%s\n' \
+                    "$DISCOVERED_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+            fi
+        elif path_looks_like_log "$plan_target"; then
+            plan_writer_found=1
+            if pid_systemd_service_unit "$plan_pid"; then
+                if protected_cleanup_unit "$DISCOVERED_SERVICE_UNIT"; then
+                    printf '  BLOCKED unit=%s pid=%s process=%s target=%s (protected runtime dependency)\n' \
+                        "$DISCOVERED_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+                    PLAN_BLOCKED=1
+                else
+                    printf '  AUTO-STOP-PRESERVE unit=%s pid=%s process=%s target=%s (add to --extra-paths to clean)\n' \
+                        "$DISCOVERED_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+                fi
+            else
+                if [ -n "$DISCOVERED_USER_SERVICE_UNIT" ]; then
+                    if [ "$ACTION" = none ]; then
+                        printf '  BLOCKED user-unit=%s pid=%s process=%s target=%s (systemd user service cannot be safely restored without a final power action)\n' \
+                            "$DISCOVERED_USER_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+                        PLAN_BLOCKED=1
+                    else
+                        printf '  USER-STOP-PRESERVE unit=%s pid=%s process=%s target=%s (user resources terminate; nonstandard log is preserved)\n' \
+                            "$DISCOVERED_USER_SERVICE_UNIT" "$plan_pid" "$plan_comm" "$plan_target"
+                    fi
+                else
+                    printf '  BLOCKED pid=%s process=%s target=%s (no systemd system-service mapping; add --extra-services or stop it first)\n' \
+                        "$plan_pid" "$plan_comm" "$plan_target"
+                    PLAN_BLOCKED=1
+                fi
+            fi
+        fi
+    done
+    [ "$plan_writer_found" -eq 1 ] || printf '%s\n' '  none detected'
+    printf '%s\n' \
+        '  Every safely mapped system service affecting cleanup is stopped.' \
+        '  User services require a final power action or must not hold cleanup-related files.' \
+        '  Nonstandard application logs remain untouched unless selected by --extra-paths.'
 }
 
 print_cloud_init_generated_config_preview() {
@@ -601,6 +931,8 @@ print_plan() {
         "  remove user/system known_hosts: $(print_boolean "$REMOVE_KNOWN_HOSTS")" \
         "  zero filesystem free space: $(print_boolean "$ZERO_FREE_SPACE")" \
         "  wipe active swap: $(print_boolean "$WIPE_SWAP")" \
+        '  auto-stop mapped services affecting cleanup: enabled' \
+        '  persistent unit files and enabled/disabled state are not changed' \
         '  private /run staging: enabled for every real execution' \
         '  transient service + login termination: enabled for every real execution' \
         '  systemd --collect + automatic script deletion: enabled for every real execution' \
@@ -712,6 +1044,8 @@ print_plan() {
         fi
     fi
 
+    precheck_extra_service_units
+
     printf '%s\n' '' 'Services considered for temporary stop:' \
         '  rsyslog, syslog-ng, systemd journal upload/remote/gateway' \
         '  auditd, acct, psacct, atop, cron/crond, anacron, atd, timers.target' \
@@ -719,19 +1053,21 @@ print_plan() {
         '  Docker, Podman, containerd, CRI-O, kubelet, systemd-random-seed' \
         '  PackageKit, apt-daily/unattended-upgrades, DNF/Yum cache timers'
 
-    if [ -n "$CUSTOM_SERVICE_FILE" ]; then
-        printf '  custom service list: %s\n' "$CUSTOM_SERVICE_FILE"
-        [ -r "$CUSTOM_SERVICE_FILE" ] || die "custom service file is not readable: $CUSTOM_SERVICE_FILE"
-        sed -n '/^[[:space:]]*#/d; /^[[:space:]]*$/d; s/^/    /p' "$CUSTOM_SERVICE_FILE"
+    print_open_log_writer_plan
+
+    if [ -n "$EXTRA_SERVICE_FILE" ]; then
+        printf '  extra service list: %s\n' "$EXTRA_SERVICE_FILE"
+        [ -r "$EXTRA_SERVICE_FILE" ] || die "extra service file is not readable: $EXTRA_SERVICE_FILE"
+        sed -n '/^[[:space:]]*#/d; /^[[:space:]]*$/d; s/^/    /p' "$EXTRA_SERVICE_FILE"
     else
-        printf '%s\n' '  custom service list: none'
+        printf '%s\n' '  extra service list: none'
     fi
-    if [ -n "$CUSTOM_PATH_FILE" ]; then
-        printf '  custom path list: %s\n' "$CUSTOM_PATH_FILE"
-        [ -r "$CUSTOM_PATH_FILE" ] || die "custom path file is not readable: $CUSTOM_PATH_FILE"
-        sed -n '/^[[:space:]]*#/d; /^[[:space:]]*$/d; s/^/    /p' "$CUSTOM_PATH_FILE"
+    if [ -n "$EXTRA_PATH_FILE" ]; then
+        printf '  extra path list: %s\n' "$EXTRA_PATH_FILE"
+        [ -r "$EXTRA_PATH_FILE" ] || die "extra path file is not readable: $EXTRA_PATH_FILE"
+        sed -n '/^[[:space:]]*#/d; /^[[:space:]]*$/d; s/^/    /p' "$EXTRA_PATH_FILE"
     else
-        printf '%s\n' '  custom path list: none'
+        printf '%s\n' '  extra path list: none'
     fi
     if [ "$(id -u)" -ne 0 ]; then
         warn "dry-run is non-root; service visibility may be incomplete"
@@ -739,7 +1075,7 @@ print_plan() {
     [ "$PLAN_BLOCKED" -eq 0 ]
 }
 
-validate_custom_lists
+validate_extra_lists
 
 if [ "$DRY_RUN" -eq 1 ]; then
     print_plan || exit 2
@@ -752,6 +1088,7 @@ fi
 [ -w "$script_dir" ] ||
     die "the source script directory must be writable so the verified source copy can be removed"
 check_execution_environment || die "$EXEC_ENV_ERROR"
+precheck_extra_service_units
 if have auditctl; then
     audit_preflight=$(auditctl -s 2>/dev/null | awk '$1 == "enabled" { print $2; exit }' || printf '')
     [ "$audit_preflight" != 2 ] ||
@@ -878,20 +1215,20 @@ stage_and_dispatch() {
     chown root:root "$staged_script" 2>/dev/null || { cleanup_failed_staging "$runtime_dir"; die "could not assign the runtime script to root"; }
 
     staged_path_file=
-    if [ -n "$CUSTOM_PATH_FILE" ]; then
+    if [ -n "$EXTRA_PATH_FILE" ]; then
         staged_path_file=$runtime_dir/custom-paths.list
-        stage_file_verified "$CUSTOM_PATH_FILE" "$staged_path_file" || {
+        stage_file_verified "$EXTRA_PATH_FILE" "$staged_path_file" || {
             cleanup_failed_staging "$runtime_dir"
-            die "failed to copy and verify the custom path list"
+        die "failed to copy and verify the extra path list"
         }
         chmod 600 "$staged_path_file" 2>/dev/null || :
     fi
     staged_service_file=
-    if [ -n "$CUSTOM_SERVICE_FILE" ]; then
+    if [ -n "$EXTRA_SERVICE_FILE" ]; then
         staged_service_file=$runtime_dir/custom-services.list
-        stage_file_verified "$CUSTOM_SERVICE_FILE" "$staged_service_file" || {
+        stage_file_verified "$EXTRA_SERVICE_FILE" "$staged_service_file" || {
             cleanup_failed_staging "$runtime_dir"
-            die "failed to copy and verify the custom service list"
+        die "failed to copy and verify the extra service list"
         }
         chmod 600 "$staged_service_file" 2>/dev/null || :
     fi
@@ -915,8 +1252,8 @@ stage_and_dispatch() {
     [ "$ZERO_FREE_SPACE" -eq 0 ] || set -- "$@" --zero-free-space
     [ "$WIPE_SWAP" -eq 0 ] || set -- "$@" --wipe-swap
     [ "$VERIFY" -eq 0 ] || set -- "$@" --verify
-    [ -z "$staged_path_file" ] || set -- "$@" --paths "$staged_path_file"
-    [ -z "$staged_service_file" ] || set -- "$@" --services "$staged_service_file"
+    [ -z "$staged_path_file" ] || set -- "$@" --extra-paths "$staged_path_file"
+    [ -z "$staged_service_file" ] || set -- "$@" --extra-services "$staged_service_file"
     if "$@"; then
         log "dispatched transient service: $transient_unit.service"
         log "private runtime directory: $runtime_dir"
@@ -958,11 +1295,15 @@ ACTIVE_SYSTEMD_UNITS=$STATE_DIR/active-systemd-units
 ACTIVE_SYSV_SERVICES=$STATE_DIR/active-sysv-services
 RUNTIME_MASKED_UNITS=$STATE_DIR/runtime-masked-units
 DISABLED_SWAP_TARGETS=$STATE_DIR/disabled-swap-targets
+AUTO_STOPPED_UNITS=$STATE_DIR/auto-stopped-units
+TARGETED_LOGIN_SESSIONS=$STATE_DIR/targeted-login-sessions
 mkdir -p "$STATE_DIR"
 : > "$ACTIVE_SYSTEMD_UNITS"
 : > "$ACTIVE_SYSV_SERVICES"
 : > "$RUNTIME_MASKED_UNITS"
 : > "$DISABLED_SWAP_TARGETS"
+: > "$AUTO_STOPPED_UNITS"
+: > "$TARGETED_LOGIN_SESSIONS"
 
 restore_runtime_state() {
     [ "$RUNTIME_RESTORED" -eq 0 ] || return 0
@@ -1078,24 +1419,73 @@ remove_source_script_copy() {
     log "removed source script after verified staging: $SOURCE_SCRIPT_PATH"
 }
 
+login_session_class() {
+    loginctl show-session "$1" -p Class 2>/dev/null |
+        sed -n 's/^Class=//p' | awk 'NR == 1 {print; exit}'
+}
+
+session_is_user_manager_resource() {
+    case $1 in
+        manager|manager-early|background|background-light) return 0 ;;
+    esac
+    return 1
+}
+
+login_session_exists() {
+    loginctl show-session "$1" -p Id 2>/dev/null |
+        grep -Fqx -- "Id=$1"
+}
+
+first_interactive_login_session() {
+    loginctl list-sessions --no-legend 2>/dev/null |
+        while IFS=' ' read -r listed_session _; do
+            [ -n "$listed_session" ] || continue
+            listed_class=$(login_session_class "$listed_session" || printf '')
+            session_is_user_manager_resource "$listed_class" && continue
+            printf '%s\n' "$listed_session"
+            break
+        done
+}
+
 terminate_login_sessions() {
     have loginctl || die "loginctl is required to terminate login sessions"
     in_detached_service || die "login termination must run inside a detached systemd service"
-    log "terminating login sessions so shell histories cannot be written back later"
-    loginctl list-users --no-legend 2>/dev/null |
-        while IFS=' ' read -r user_id _; do
-            [ -n "$user_id" ] && loginctl terminate-user "$user_id" >/dev/null 2>&1 || :
-        done
-    loginctl list-sessions --no-legend 2>/dev/null |
-        while IFS=' ' read -r session_id _; do
-            [ -n "$session_id" ] &&
+    : > "$TARGETED_LOGIN_SESSIONS"
+    if [ "$ACTION" = none ]; then
+        log "terminating interactive login sessions while preserving systemd user managers"
+        loginctl list-sessions --no-legend 2>/dev/null |
+            while IFS=' ' read -r session_id _; do
+                [ -n "$session_id" ] || continue
+                session_class=$(login_session_class "$session_id" || printf '')
+                session_is_user_manager_resource "$session_class" && continue
+                printf '%s\n' "$session_id" >> "$TARGETED_LOGIN_SESSIONS"
                 loginctl terminate-session "$session_id" >/dev/null 2>&1 || :
-        done
+            done
+    else
+        log "terminating login users and user services before final $ACTION"
+        loginctl list-users --no-legend 2>/dev/null |
+            while IFS=' ' read -r user_id _; do
+                [ -n "$user_id" ] && loginctl terminate-user "$user_id" >/dev/null 2>&1 || :
+            done
+        loginctl list-sessions --no-legend 2>/dev/null |
+            while IFS=' ' read -r session_id _; do
+                [ -n "$session_id" ] || continue
+                printf '%s\n' "$session_id" >> "$TARGETED_LOGIN_SESSIONS"
+                loginctl terminate-session "$session_id" >/dev/null 2>&1 || :
+            done
+    fi
     session_wait=0
     remaining_session=
     while [ "$session_wait" -lt 30 ]; do
-        remaining_session=$(loginctl list-sessions --no-legend 2>/dev/null |
-            awk 'NF {print $1; exit}')
+        remaining_session=$(
+            while IFS= read -r target_session; do
+                [ -n "$target_session" ] || continue
+                if login_session_exists "$target_session"; then
+                    printf '%s\n' "$target_session"
+                    break
+                fi
+            done < "$TARGETED_LOGIN_SESSIONS"
+        )
         [ -n "$remaining_session" ] || break
         sleep 1
         session_wait=$((session_wait + 1))
@@ -1153,17 +1543,54 @@ runtime_mask_unit() {
 
 stop_required_unit() {
     unit=$1
-    have systemctl || die "systemctl is required to stop custom unit $unit"
+    protected_cleanup_unit "$unit" &&
+        die "refusing to stop protected runtime unit: $unit"
+    have systemctl || die "systemctl is required to stop unit $unit"
     load_state=$(systemctl show -p LoadState --value "$unit" 2>/dev/null || printf not-found)
-    [ "$load_state" != not-found ] || die "custom unit does not exist: $unit"
+    [ "$load_state" != not-found ] || die "systemd unit does not exist: $unit"
     if systemctl is-active --quiet "$unit"; then
         printf '%s\n' "$unit" >> "$ACTIVE_SYSTEMD_UNITS"
     fi
-    systemctl stop "$unit" >/dev/null 2>&1 || die "could not stop custom unit $unit"
+    systemctl stop "$unit" >/dev/null 2>&1 || die "could not stop unit $unit"
     if systemctl is-active --quiet "$unit"; then
-        die "custom unit is still active: $unit"
+        die "unit is still active after stop: $unit"
     fi
     runtime_mask_unit "$unit"
+}
+
+stop_unit_with_activators() {
+    service_unit=$1
+    service_reason=$2
+    case $service_unit in
+        *.service) ;;
+        *) die "automatic writer discovery mapped to a non-service unit: $service_unit" ;;
+    esac
+    [ "$service_reason" = auto ] &&
+        log "auto-stopping cleanup-related service $service_unit"
+    if have systemctl; then
+        service_triggers=$(systemctl show -p TriggeredBy --value "$service_unit" 2>/dev/null || printf '')
+        for service_trigger in $service_triggers; do
+            case $service_trigger in
+                *.socket|*.timer|*.path) stop_required_unit "$service_trigger" ;;
+            esac
+        done
+    fi
+    stop_required_unit "$service_unit"
+    if have systemctl; then
+        systemctl kill --kill-who=all "$service_unit" >/dev/null 2>&1 || :
+    fi
+    sleep 1
+}
+
+stop_configured_unit() {
+    configured_unit=$1
+    protected_cleanup_unit "$configured_unit" &&
+        die "refusing to stop protected runtime unit from --extra-services: $configured_unit"
+    case $configured_unit in
+        *.service) stop_unit_with_activators "$configured_unit" explicit ;;
+        *.socket|*.timer|*.path) stop_required_unit "$configured_unit" ;;
+        *) die "unsupported unit type in --extra-services: $configured_unit" ;;
+    esac
 }
 
 purge_non_directories() {
@@ -1192,7 +1619,7 @@ purge_directory_contents() {
         warn "some entries could not be removed from $dir (possibly a mount point)"
 }
 
-log "stopping log writers and accounting services"
+log "stopping built-in log writers and accounting services"
 for unit in $STANDARD_CLEANUP_UNITS; do
     stop_unit "$unit"
 done
@@ -1205,13 +1632,13 @@ if have systemctl && systemctl is-active --quiet auditd.service; then
     systemctl is-active --quiet auditd.service &&
         die "auditd is still active; refusing to remove its log while it is being written"
 fi
-if [ -n "$CUSTOM_SERVICE_FILE" ]; then
-    log "stopping explicitly configured application units from $CUSTOM_SERVICE_FILE"
+if [ -n "$EXTRA_SERVICE_FILE" ]; then
+    log "stopping explicitly configured extra application units from $EXTRA_SERVICE_FILE"
     while IFS= read -r unit || [ -n "$unit" ]; do
         case $unit in ''|'#'*) continue ;; esac
         case $unit in *[!A-Za-z0-9_.@:-]*) die "invalid unit name: $unit" ;; esac
-        stop_required_unit "$unit"
-    done < "$CUSTOM_SERVICE_FILE"
+        stop_configured_unit "$unit"
+    done < "$EXTRA_SERVICE_FILE"
 fi
 
 # Rotate/flush first so daemon buffers do not repopulate files after deletion.
@@ -1236,29 +1663,60 @@ done
 
 find_open_log_writer() {
     OPEN_LOG_WRITER=
+    OPEN_LOG_UNIT=
+    OPEN_USER_LOG_UNIT=
     for open_fd in /proc/[0-9]*/fd/*; do
         [ -L "$open_fd" ] || continue
-        open_target=$(readlink -- "$open_fd" 2>/dev/null || printf '')
+        fd_is_writable "$open_fd" || continue
+        resolve_open_fd_target "$open_fd" || continue
+        open_target=$RESOLVED_OPEN_TARGET
         case $open_target in
             /var/log/journal/*|/run/log/journal/*) continue ;;
-            /var/log/*|/run/log/*|/var/adm/*|/var/account/*|/var/crash/*|\
-            /var/spool/abrt/*|/var/lib/systemd/coredump/*|/var/lib/apport/coredump/*|\
-            /var/lib/docker/containers/*|/var/lib/containers/storage/overlay-containers/*|\
-            /var/lib/kubelet/pods/*/containers/*.log*|*/*.log*|*/*.trace*|*/*.out|*/*.err)
-                open_proc=${open_fd#/proc/}
-                open_pid=${open_proc%%/*}
-                open_comm=$(cat "/proc/$open_pid/comm" 2>/dev/null || printf unknown)
-                OPEN_LOG_WRITER="pid=$open_pid process=$open_comm target=$open_target"
-                return 0
-                ;;
         esac
+        path_is_builtin_cleanup_target "$open_target" ||
+            path_looks_like_log "$open_target" ||
+            path_is_extra_cleanup_target "$open_target" || continue
+        open_proc=${open_fd#/proc/}
+        open_pid=${open_proc%%/*}
+        pid_is_self_or_ancestor "$open_pid" && continue
+        open_comm=$(cat "/proc/$open_pid/comm" 2>/dev/null || printf unknown)
+        OPEN_LOG_WRITER="pid=$open_pid process=$open_comm target=$open_target"
+        if pid_systemd_service_unit "$open_pid"; then
+            OPEN_LOG_UNIT=$DISCOVERED_SERVICE_UNIT
+        elif [ -n "$DISCOVERED_USER_SERVICE_UNIT" ]; then
+            OPEN_USER_LOG_UNIT=$DISCOVERED_USER_SERVICE_UNIT
+        fi
+        return 0
     done
     return 1
 }
 
-if find_open_log_writer; then
-    die "a process still has a log open; add its unit to --services and any nonstandard log path to --paths: $OPEN_LOG_WRITER"
-fi
+# Automatically quiesce every mapped service that writes a selected cleanup
+# target or other log-like file. Nonstandard application logs are only removed
+# when --extra-paths selects them, but their writers are still stopped.
+AUTO_STOP_COUNT=0
+auto_stop_open_log_writers() {
+    while find_open_log_writer; do
+        if [ -z "$OPEN_LOG_UNIT" ]; then
+            if [ -n "$OPEN_USER_LOG_UNIT" ]; then
+                die "systemd user service $OPEN_USER_LOG_UNIT still owns a cleanup-related file and cannot be safely auto-stopped and restored: $OPEN_LOG_WRITER"
+            fi
+            die "a cleanup-related writable file is open but no systemd system-service mapping was found: $OPEN_LOG_WRITER"
+        fi
+        if protected_cleanup_unit "$OPEN_LOG_UNIT"; then
+            die "a protected runtime dependency still has a cleanup-related file open: $OPEN_LOG_WRITER"
+        fi
+        if grep -Fqx -- "$OPEN_LOG_UNIT" "$AUTO_STOPPED_UNITS" 2>/dev/null; then
+            die "service remains a cleanup writer after automatic stop: $OPEN_LOG_WRITER"
+        fi
+        printf '%s\n' "$OPEN_LOG_UNIT" >> "$AUTO_STOPPED_UNITS"
+        AUTO_STOP_COUNT=$((AUTO_STOP_COUNT + 1))
+        [ "$AUTO_STOP_COUNT" -le 128 ] || die "automatic writer stop limit exceeded"
+        stop_unit_with_activators "$OPEN_LOG_UNIT" auto
+    done
+}
+
+auto_stop_open_log_writers
 
 log "removing system, service, audit, journal, accounting, and crash logs"
 # Preserve distro-specific inode metadata for binary accounting files.
@@ -1309,9 +1767,6 @@ purge_directory_contents /run/faillock
 purge_directory_contents /var/run/faillock
 purge_directory_contents /var/lib/faillock
 purge_directory_contents /var/lib/lastlog
-rm -f -- /var/lib/fail2ban/fail2ban.sqlite3 \
-    /var/lib/fail2ban/fail2ban.sqlite3-shm \
-    /var/lib/fail2ban/fail2ban.sqlite3-wal 2>/dev/null || :
 
 # State files that otherwise preserve an offset/reference to deleted log streams.
 rm -f -- \
@@ -1436,29 +1891,32 @@ rm -f -- /var/cache/apt/pkgcache.bin /var/cache/apt/srcpkgcache.bin \
     /usr/lib/sysimage/libdnf5/transaction_history.sqlite-shm \
     /usr/lib/sysimage/libdnf5/transaction_history.sqlite-wal 2>/dev/null || :
 
-if [ -n "$CUSTOM_PATH_FILE" ]; then
-    log "cleaning explicitly configured application log paths from $CUSTOM_PATH_FILE"
+clean_extra_paths() {
+    [ -n "$EXTRA_PATH_FILE" ] || return 0
+    log "cleaning explicitly configured extra application log paths from $EXTRA_PATH_FILE"
     while IFS= read -r custom || [ -n "$custom" ]; do
         case $custom in ''|'#'*) continue ;; esac
-        safe_custom_path "$custom" || die "unsafe custom path rejected: $custom"
+        safe_custom_path "$custom" || die "unsafe extra path rejected: $custom"
         if have readlink && [ -e "$custom" ]; then
             canonical=$(readlink -f -- "$custom" 2>/dev/null || printf '')
-            [ -n "$canonical" ] || die "could not resolve custom path: $custom"
-            safe_custom_path "$canonical" || die "custom path resolves to a protected target: $custom -> $canonical"
+            [ -n "$canonical" ] || die "could not resolve extra path: $custom"
+            safe_custom_path "$canonical" || die "extra path resolves to a protected target: $custom -> $canonical"
         fi
         if [ -L "$custom" ]; then
-            die "symlinked custom path rejected: $custom"
+            die "symlinked extra path rejected: $custom"
         elif custom_path_is_mount_root "$custom"; then
-            die "mount-root custom path rejected at execution time: $custom"
+            die "mount-root extra path rejected at execution time: $custom"
         elif [ -d "$custom" ]; then
             purge_directory_contents "$custom"
         elif [ -f "$custom" ]; then
             rm -f -- "$custom"
         else
-            warn "custom path does not exist: $custom"
+            warn "extra path does not exist: $custom"
         fi
-    done < "$CUSTOM_PATH_FILE"
-fi
+    done < "$EXTRA_PATH_FILE"
+}
+
+clean_extra_paths
 
 if [ "$REMOVE_CLOUD_INIT_STATE" -eq 1 ]; then
     log "removing cloud-init instance state and logs"
@@ -1699,7 +2157,7 @@ run_verification() {
                 verify_warn "system-wide SSH client history remains: $verify_system_known"
         fi
     fi
-    if [ -n "$CUSTOM_PATH_FILE" ]; then
+    if [ -n "$EXTRA_PATH_FILE" ]; then
         while IFS= read -r verify_custom || [ -n "$verify_custom" ]; do
             case $verify_custom in ''|'#'*) continue ;; esac
             if [ -d "$verify_custom" ]; then
@@ -1709,11 +2167,15 @@ run_verification() {
             elif [ -e "$verify_custom" ]; then
                 verify_warn "custom cleanup file still exists: $verify_custom"
             fi
-        done < "$CUSTOM_PATH_FILE"
+        done < "$EXTRA_PATH_FILE"
     fi
     if have loginctl; then
-        verify_session=$(loginctl list-sessions --no-legend 2>/dev/null |
-            awk 'NF {print $1; exit}')
+        if [ "$ACTION" = none ]; then
+            verify_session=$(first_interactive_login_session)
+        else
+            verify_session=$(loginctl list-sessions --no-legend 2>/dev/null |
+                awk 'NF {print $1; exit}')
+        fi
         [ -z "$verify_session" ] || verify_warn "login session remains: $verify_session"
     fi
 
@@ -1870,9 +2332,102 @@ if [ "$REMOVE_NETWORK_LEASES" -eq 1 ]; then
     purge_directory_contents /run/systemd/netif/leases
 fi
 
-if find_open_log_writer; then
-    die "a process reopened a cleaned log path before finalization: $OPEN_LOG_WRITER"
-fi
+final_log_sweep() {
+    for final_accounting_file in /var/log/wtmp /var/log/btmp /var/log/lastlog; do
+        if [ -L "$final_accounting_file" ] && have readlink; then
+            final_accounting_target=$(readlink -f -- "$final_accounting_file" 2>/dev/null || printf '')
+            case $final_accounting_target in
+                /var/log/*|/run/*)
+                    [ -f "$final_accounting_target" ] && : > "$final_accounting_target"
+                    ;;
+            esac
+        elif [ -f "$final_accounting_file" ]; then
+            : > "$final_accounting_file"
+        fi
+    done
+    if [ -d /var/log ] && [ ! -L /var/log ]; then
+        find /var/log -xdev -mindepth 1 \
+            \( -type f -o -type p -o -type s \) \
+            ! -path '/var/log/journal/*' \
+            ! -path /var/log/wtmp ! -path /var/log/btmp ! -path /var/log/lastlog \
+            -delete 2>/dev/null ||
+            warn "some standard log entries could not be removed during the final sweep"
+    fi
+    if [ -d /run/log ] && [ ! -L /run/log ]; then
+        find /run/log -xdev -mindepth 1 \
+            \( -type f -o -type p -o -type s \) \
+            ! -path '/run/log/journal/*' -delete 2>/dev/null ||
+            warn "some runtime log entries could not be removed during the final sweep"
+    fi
+    purge_non_directories /var/adm
+    purge_non_directories /var/account
+    purge_non_directories /var/spool/abrt
+    purge_non_directories /var/crash
+    purge_non_directories /var/lib/systemd/coredump
+    purge_non_directories /var/lib/apport/coredump
+    purge_non_directories /var/lib/systemd/pstore
+    purge_non_directories /sys/fs/pstore
+    purge_directory_contents /var/lib/rsyslog
+    purge_directory_contents /var/spool/rsyslog
+    purge_directory_contents /var/lib/syslog-ng
+    purge_directory_contents /var/spool/audit
+    purge_directory_contents /var/spool/audispd
+    purge_directory_contents /var/lib/systemd/journal-upload
+    rm -f -- /run/utmp /var/run/utmp 2>/dev/null || :
+    purge_directory_contents /run/faillock
+    purge_directory_contents /var/run/faillock
+    purge_directory_contents /var/lib/faillock
+    purge_directory_contents /tmp
+    purge_directory_contents /var/tmp
+    purge_directory_contents /var/cache/abrt-di
+    purge_directory_contents /var/lib/systemd/timers
+    purge_directory_contents /var/cache/dnf
+    purge_directory_contents /var/cache/libdnf5
+    purge_directory_contents /var/cache/yum
+    purge_directory_contents /var/cache/PackageKit
+    purge_directory_contents /var/cache/apt/archives
+    purge_directory_contents /var/lib/apt/lists
+    if [ -d /var/lib/docker/containers ]; then
+        find /var/lib/docker/containers -xdev -type f \
+            \( -name '*-json.log' -o -name 'container.log' \) -delete 2>/dev/null || :
+    fi
+    if [ -d /var/lib/containers/storage/overlay-containers ]; then
+        find /var/lib/containers/storage/overlay-containers -xdev -type f \
+            \( -name 'ctr.log' -o -name 'container.log' \) -delete 2>/dev/null || :
+    fi
+    purge_directory_contents /var/log/containers
+    purge_directory_contents /var/log/pods
+    if [ -d /var/lib/kubelet/pods ]; then
+        find /var/lib/kubelet/pods -xdev -type f -path '*/containers/*.log' -delete 2>/dev/null || :
+    fi
+    clean_home /root
+    if [ -r /etc/passwd ]; then
+        while IFS=: read -r _ _ _ _ _ final_home_dir _; do
+            case $final_home_dir in
+                /|/bin|/boot|/dev|/etc|/lib|/lib64|/proc|/run|/sbin|/sys|/usr|/var|'') continue ;;
+            esac
+            [ "$final_home_dir" = /root ] || clean_home "$final_home_dir"
+        done < /etc/passwd
+    fi
+    for final_home_dir in /home/*; do
+        [ -d "$final_home_dir" ] && clean_home "$final_home_dir"
+    done
+    clean_extra_paths
+}
+
+FINAL_SWEEP_STABLE=0
+FINAL_SWEEP_ROUND=1
+while [ "$FINAL_SWEEP_ROUND" -le 3 ]; do
+    auto_stop_open_log_writers
+    final_log_sweep
+    if ! find_open_log_writer; then
+        FINAL_SWEEP_STABLE=1
+        break
+    fi
+    FINAL_SWEEP_ROUND=$((FINAL_SWEEP_ROUND + 1))
+done
+[ "$FINAL_SWEEP_STABLE" -eq 1 ] ||
+    die "a cleanup writer remained active after three automatic stop and cleanup passes: $OPEN_LOG_WRITER"
 
 cleanup_runtime_payload_success() {
     case $RUNTIME_DIR in

@@ -102,24 +102,27 @@ exec /bin/sh /run/CXT-SystemPrep.sh --profile privacy --reboot --yes
 | `--remove-known-hosts` | Remove user and system-wide SSH client `known_hosts` files |
 | `--zero-free-space` | Zero free space on writable ext2/3/4 and XFS filesystems; slow, but improves raw-image compression |
 | `--wipe-swap` | Zero active disk swap and recreate its metadata; slow and requires adequate RAM |
-| `--paths FILE` | Read dedicated, disposable application log/cache paths from a file |
-| `--services FILE` | Stop explicitly listed systemd services during cleanup |
+| `--extra-paths FILE` | Read dedicated, disposable application log/cache paths from a file |
+| `--extra-services FILE` | Stop explicitly listed system-manager units during cleanup; useful for activators or services that need an explicit pause |
 | `--dry-run` | Print the plan without changing the system |
 | `--verify` | Write an advisory verification report to `cxt-systemprep.log` in the private runtime directory |
 | `--yes` | Skip the typed confirmation |
 
-`--terminate-sessions` and `--self-delete` are deliberately absent. Those actions are automatic for every real execution.
+`--terminate-sessions`, `--self-delete`, `--audit-open-log-writers`, and
+`--ignore-unknown-log-writers` are deliberately absent. Session termination,
+source/runtime collection, and log-writer auditing are automatic. An unmapped or
+protected writer is a hard safety failure; it cannot be ignored.
 
 ## Automatic transient-service behavior
 
 For a real run, CXT-SystemPrep:
 
 1. validates root access, systemd capability, `/run`, requested safety conditions, and package-manager locks;
-2. stages the script and custom list files into a private `0700` directory under `/run`;
+2. stages the script and extra list files into a private `0700` directory under `/run`;
 3. verifies the staged script with SHA-256;
 4. starts a transient `systemd-run` service with `--collect`;
 5. removes the original uploaded/downloaded script after successful dispatch;
-6. terminates login sessions before user histories are removed;
+6. terminates interactive login sessions before user histories are removed; with a final power action, all user resources are terminated as well;
 7. performs cleanup and the selected final power action;
 8. removes the staged script and temporary payload on success.
 
@@ -132,6 +135,55 @@ journalctl -u 'cxt-systemprep-*' --no-pager
 
 With `--poweroff` or `--reboot`, `/run` is cleared during the next boot, so the verification report is intentionally ephemeral.
 
+## Automatic cleanup-writer handling
+
+Before deleting files, the runtime service scans writable file descriptors,
+including pathname-backed Unix sockets, and maps selected cleanup targets and
+other log-like paths to their systemd service through the process cgroup. Every
+mapped system-service writer is stopped and runtime-masked automatically, including services
+not listed in the built-in table. This means a deployed service such as
+`picoclaw.service`, `nginx.service`, or a locally installed agent can be paused
+without adding its unit name first.
+
+The service itself is never deleted, disabled, edited, or uninstalled. Socket,
+timer, and path activators are also paused when necessary. If the final action is
+omitted, system units that were active before cleanup are unmasked and restarted. With
+`--reboot` or `--poweroff`, they are left stopped for the final transaction; the
+captured system's original `enabled` state is unchanged and controls the next
+boot.
+
+Only the file contents selected by the cleanup scope are removed. A custom
+application log outside the standard system locations is stopped automatically
+but preserved unless it is listed in `--extra-paths`. For example, PicoClaw's
+`/home/picoclaw/.picoclaw/logs` is preserved by default; add that directory to an
+extra-path file when it should be emptied. Nginx logs under `/var/log/nginx` are
+part of the standard `/var/log/**` tree and are cleaned automatically.
+
+If a cleanup-related writer cannot be mapped to a systemd service, or belongs to
+a protected runtime dependency, the operation stops with an error. There is no
+ignore switch because proceeding would allow deleted data to be rewritten while
+the image is being sealed.
+
+Systemd user services are handled conservatively. With `--poweroff` or
+`--reboot`, user sessions, user managers, and their services are terminated before
+the final transaction; their enabled state is not edited, so normal boot policy
+controls the cloned system. Without a final power action, user managers are
+preserved. If a user service still owns a selected cleanup path or another
+log-like file, dry-run reports `BLOCKED` and real cleanup aborts because the tool
+cannot guarantee an exact stop-and-restore cycle through every per-user manager.
+
+Dry-run discovery labels:
+
+| Label | Meaning |
+| --- | --- |
+| `BUILT-IN-STOP` | A built-in platform service will be stopped and its selected data cleaned |
+| `AUTO-STOP` | An unlisted service was discovered automatically and its selected data will be cleaned |
+| `AUTO-STOP-PRESERVE` | The service will be stopped, but its nonstandard application log is outside the cleanup scope |
+| `EXTRA-STOP` | The service was also present in `--extra-services` |
+| `USER-STOP` | A systemd user service writes selected data and its user resources will terminate before reboot or poweroff |
+| `USER-STOP-PRESERVE` | A user service will terminate before the final power action, but its nonstandard application log is preserved |
+| `BLOCKED` | The writer cannot be stopped safely; a real run will abort |
+
 ## Default cleanup scope
 
 The default `test` scope removes:
@@ -141,7 +193,11 @@ The default `test` scope removes:
 - DNF/Yum history, logrotate state, temporary files, timer state, and faillock state;
 - Docker, Podman, containerd, CRI-O, and Kubernetes **text logs**, while preserving container images, volumes, and application data.
 
-Container data, package databases, and application databases are not general cleanup targets. Extra business logs or caches must be explicitly supplied through `--paths` after reviewing the safety restrictions.
+Fail2ban/CrowdSec databases, container data, package databases, security rules,
+and application databases are not general cleanup targets. In particular, the
+Fail2ban ban database is retained because it is operational state rather than a
+log. Extra business logs or caches must be explicitly supplied through
+`--extra-paths` after reviewing the safety restrictions.
 
 ## Cloud-init behavior
 
@@ -159,13 +215,35 @@ Use dry-run before enabling this option:
   --dry-run
 ```
 
-## Custom list files
+## Extra list files
 
-`--paths FILE` accepts one absolute path per line. Blank lines and `#` comments are ignored. A listed directory is emptied but preserved. The script rejects symlinks, broad system roots, protected configuration/state trees, mount roots, database roots, and suspicious paths outside dedicated log/cache/history/trace/audit/tmp locations.
+`--extra-paths FILE` accepts one absolute path per line. Blank lines and `#`
+comments are ignored. A listed directory is emptied but preserved. The script
+rejects symlinks, broad system roots, protected configuration/state trees, mount
+roots, database roots, and suspicious paths outside dedicated
+log/cache/history/trace/audit/tmp locations. This is the normal mechanism for
+cleaning application-owned paths such as `/home/picoclaw/.picoclaw/logs`.
 
-`--services FILE` accepts one systemd service unit per line. Listed units are stopped and runtime-masked during cleanup. They are restored only when no final power action is selected and they were active before the run.
+`--extra-services FILE` accepts one system-manager `.service`, `.socket`,
+`.timer`, or `.path` unit per line. Arbitrary `.target` units, critical runtime
+dependencies, systemd user-manager units, and missing or unloaded units are
+rejected before staging. Listed units are stopped and runtime-masked during
+cleanup. They are restored only when no final power action is selected and they
+were active before the run. This option is an advanced override for activators
+or services that cannot be discovered from a currently open log file; it is not
+normally needed for a service that writes a standard or extra log path.
 
-Custom list files are copied into the private `/run` staging directory for execution, but their original source files are not deleted. Put the originals under `/run` too if they should disappear on the next reboot.
+Extra list files are copied into the private `/run` staging directory for
+execution, but their original source files are not deleted. Put the originals
+under `/run` too if they should disappear on the next reboot.
+
+Example for PicoClaw:
+
+```sh
+printf '%s\n' /home/picoclaw/.picoclaw/logs > /run/cxt-extra-paths.list
+exec /bin/sh /run/CXT-SystemPrep.sh \
+  --profile test --extra-paths /run/cxt-extra-paths.list --yes
+```
 
 ## Platform requirements and limits
 
